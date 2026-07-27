@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "198439372867",
+    "project_id": "cashspark-c15bd",
+    "storage_bucket": "cashspark-c15bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:198439372867:android:12e51e0436fd5573a16cf6",
+        "android_client_info": {
+          "package_name": "com.spydev.funpay"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "198439372867-3ev3k1lqh41dfpkh9a199s2u4ga3361r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spydev.funpay",
+            "certificate_hash": "3638d805ecff6965afaf857ba86db5cf9893c5fb"
+          }
+        },
+        {
+          "client_id": "198439372867-53avjabi6p7a7phdkt11ldk5vbu4s42c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spydev.funpay",
+            "certificate_hash": "c65d41fee9f2c9910bc7fe348e555f54f0fe1631"
+          }
+        },
+        {
+          "client_id": "198439372867-lop585tm72ud9domh44jf6hmu1dmhncl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.spydev.funpay",
+            "certificate_hash": "5d60ff730f194a21401b156cf71ca5e7bccbaaeb"
+          }
+        },
+        {
+          "client_id": "198439372867-5vfkneio32asqs6im247t0sle8dkcccs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCVeqgqie2jB5ZGofEeD2UGsced9Nn8U8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "198439372867-5vfkneio32asqs6im247t0sle8dkcccs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

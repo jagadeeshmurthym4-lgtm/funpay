@@ -1,0 +1,18 @@
+{
+  "name": "cashspark",
+  "version": "1.0.0",
+  "description": "CashSpark — Daily check-in with FunPay rewards and gamification",
+  "private": true,
+  "scripts": {
+    "build:www": "cp index.html www/ && cp manifest.json www/ && cp sw.js www/ && cp icon-*.svg www/",
+    "build:apk": "npm run build:www && npx cap copy && cd android && ./gradlew assembleDebug",
+    "build:release": "npm run build:www && npx cap copy && cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/local-notifications": "^8.2.1",
+    "@capacitor/push-notifications": "^8.1.2"
+  }
+}

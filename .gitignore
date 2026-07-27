@@ -1,0 +1,51 @@
+# macOS
+.DS_Store
+.Trash/
+*~
+
+# Build outputs
+/build/
+build 2/
+build 3/
+*.apk
+*.aab
+*.ipa
+
+# Flutter/Dart
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+**/doc/api/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+android/key.properties
+android/gradlew.bat
+
+# iOS
+iOS/Pods/
+iOS/.symlinks/
+
+# Node.js
+**/node_modules/
+
+# Firebase
+.firebase/
+
+# Web
+sw.js
+manifest.json
+
+# Temp
+*.log
+*.tmp
+node_modules/
+functions/node_modules/

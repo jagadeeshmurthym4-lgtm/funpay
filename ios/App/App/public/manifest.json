@@ -1,0 +1,23 @@
+{
+  "name": "CashSpark",
+  "short_name": "CashSpark",
+  "description": "Daily check-in with FunPay rewards and gamification",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0d15",
+  "theme_color": "#ffd700",
+  "icons": [
+    {
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

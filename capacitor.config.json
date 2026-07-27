@@ -1,0 +1,16 @@
+{
+  "appId": "com.cashspark.app",
+  "appName": "CashSpark",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": null,
+      "keystorePassword": null,
+      "keystoreAlias": null,
+      "keystoreAliasPassword": null
+    }
+  }
+}

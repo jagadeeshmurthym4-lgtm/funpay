@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+    The default_web_client_id is the Web OAuth client ID from the Firebase Console.
+    It is REQUIRED by google_sign_in 7.x on Android to use the Credential Manager API.
+    This string resource is looked up automatically by the Google Sign-In SDK.
+    -->
+    <string name="default_web_client_id" translatable="false">198439372867-5vfkneio32asqs6im247t0sle8dkcccs.apps.googleusercontent.com</string>
+</resources>

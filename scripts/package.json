@@ -1,0 +1,10 @@
+{
+  "name": "cashspark-seed",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Seed Firestore with initial offers and projects data",
+  "main": "seed_data.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

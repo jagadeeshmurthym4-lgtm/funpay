@@ -1,0 +1,57 @@
+name: cashspark
+description: "Fun Pay - Earn rewards through ads, referrals, and more!"
+publish_to: 'none'
+
+version: 1.1.3+18
+
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.5
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.4
+  cloud_firestore: ^6.6.0
+  firebase_messaging: ^16.4.1
+  firebase_crashlytics: ^5.2.4
+  cloud_functions: ^6.3.3
+  firebase_storage: ^13.4.3
+  google_sign_in: ^7.1.0
+  connectivity_plus: ^7.3.0
+  flutter_secure_storage: ^10.3.1
+  intl: ^0.20.2
+  uuid: ^4.5.3
+  url_launcher: ^6.3.2
+  share_plus: ^12.0.0
+  google_mobile_ads: ^6.0.0
+  image_picker: ^1.2.0
+  fl_chart: ^0.71.0
+  shared_preferences: ^2.5.3
+  http: ^1.6.0
+  cloudinary_public: ^0.23.1
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  mocktail: ^1.0.5
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/images/app_icon.png"
+  adaptive_icon_background: "#FF6B35"
+  adaptive_icon_foreground: "assets/images/app_icon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/app_icon.png

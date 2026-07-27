@@ -1,0 +1,300 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+    function isAdmin() { return isAuthenticated() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+
+    // Users
+    // Regular users can read/update their own doc; admins can manage all users.
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Wallets - read own, write admin only (prevent manual balance edits)
+    // Referral sign-up bonus: The referred user can credit ₹10 to the referrer's wallet
+    // if the referral document confirms the relationship.
+    match /wallets/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin() ||
+        (isAuthenticated() &&
+         request.resource.data._referralId is string &&
+         get(/databases/$(database)/documents/referrals/$(request.resource.data._referralId)).data.referredUserId == request.auth.uid &&
+         get(/databases/$(database)/documents/referrals/$(request.resource.data._referralId)).data.referrerUserId == userId);
+      allow delete: if isAdmin();
+    }
+
+    // Transactions - read own, create self, update/delete admin only
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Create: allow user to create own transactions OR admin to create for any user
+      allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isAdmin();
+    }
+
+    // Withdrawals - read own, create self, update/delete admin only
+    match /withdrawals/{withdrawalId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Referrals
+    match /referrals/{referralId} {
+      allow read: if isAuthenticated() && (resource.data.referrerUserId == request.auth.uid || resource.data.referredUserId == request.auth.uid || isAdmin());
+      // Create: allow EITHER the referrer OR the referred user to create the referral record
+      allow create: if isAuthenticated() && (request.resource.data.referrerUserId == request.auth.uid || request.resource.data.referredUserId == request.auth.uid);
+      // Update: allow admin, the referrer, or the referred user to update.
+      // The referred user sets signupBonusCredited=true to prevent double-credit
+      // if the onReferralCreated Cloud Function is deployed later.
+      allow update: if isAdmin() || (isAuthenticated() &&
+        (resource.data.referrerUserId == request.auth.uid ||
+         resource.data.referredUserId == request.auth.uid));
+      allow delete: if isAdmin();
+    }
+
+    // Referral rewards
+    match /referral_rewards/{rewardId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Rewards
+    match /rewards/{rewardId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Rewards config - readable by all, writable by admin
+    match /rewards_config/{configId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Daily check-ins
+    match /daily_checkins/{checkinId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Streaks
+    match /streaks/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Daily system tasks (per-user)
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // Admin collection
+    match /admins/{adminId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Admin logs
+    match /admin_logs/{logId} {
+      allow read, create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    // App settings
+    match /app_settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Agreements
+    match /agreements/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Create: admin can broadcast to any user; users can create for themselves
+      allow create: if isAdmin() || (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    // Fraud reports
+    match /fraud_reports/{reportId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isAuthenticated();
+    }
+
+    // Device registry
+    match /device_registry/{deviceId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
+    // Login attempts
+    match /login_attempts/{attemptId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Offers - publicly managed content, readable by all authenticated users
+    match /offers/{offerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+// Projects - publicly managed content, readable by all authenticated users
+match /projects/{projectId} {
+  allow read: if isAuthenticated();
+  allow write: if isAdmin();
+}
+
+// Banners - admin-managed promotional banners displayed in the app
+match /banners/{bannerId} {
+  allow read: if isAuthenticated();
+  allow write: if isAdmin();
+}
+
+// Ad Config - admin-managed ad configuration (e.g. AdMob settings)
+match /ad_config/{configId} {
+  allow read: if isAuthenticated();
+  allow write: if isAdmin();
+}
+
+// Verification Requests - admin-managed user verification requests
+match /verification_requests/{requestId} {
+  allow read: if isAdmin();
+  allow create: if isAdmin();
+  allow update: if isAdmin();
+  allow delete: if isAdmin();
+}
+
+// Spin Data - per-user spin wheel progress
+match /spin_data/{userId} {
+  allow read, write: if request.auth != null && request.auth.uid == userId;
+}
+
+// Affiliate Projects - publicly managed content, readable by all authenticated users
+// Admin has full write access. Users can increment participation/clicks counters
+// when they start a project (verified by exact +1 increment + field constraints).
+match /affiliate_projects/{projectId} {
+  allow read: if isAuthenticated();
+  allow create: if isAdmin();
+  allow update: if isAdmin() ||
+    // User increments currentParticipants + sets updatedDate (from startProject)
+    (isAuthenticated() &&
+     request.resource.data.diff(resource.data).affectedKeys()
+       .hasOnly(['currentParticipants', 'updatedDate']) &&
+     request.resource.data.currentParticipants ==
+       resource.data.currentParticipants + 1) ||
+    // User increments clicks (from startProject)
+    (isAuthenticated() &&
+     request.resource.data.diff(resource.data).affectedKeys()
+       .hasOnly(['clicks']) &&
+     request.resource.data.clicks == resource.data.clicks + 1);
+  allow delete: if isAdmin();
+}
+
+// Scratch Cards - per-user scratch card earned from approved projects
+// Read own, create by admin (creditReward approval flow) or owner (user), update own (scratchCard transaction)
+match /scratch_cards/{scratchCardId} {
+  allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+  allow create: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isAdmin());
+  allow update: if isAdmin() || (isOwner(resource.data.userId) &&
+    request.resource.data.isUsed == true &&
+    request.resource.data.rewardAmount is number &&
+    request.resource.data.userId == resource.data.userId);
+  allow delete: if isAdmin();
+}
+
+// Project Participations - per-user project tracking
+// Users can update their own participation only for submitting proof (status -> underReview)
+// or resubmitting (status -> inProgress). Admins have full access.
+// The rewardAmount, userId, projectId, and rewardCredited cannot be changed
+// by the user to prevent fraud and unauthorized reward crediting.
+match /project_participations/{participationId} {
+  allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+  allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+  allow update: if isAdmin() || (isOwner(resource.data.userId) &&
+    request.resource.data.status in ['underReview', 'inProgress'] &&
+    request.resource.data.rewardAmount == resource.data.rewardAmount &&
+    request.resource.data.userId == resource.data.userId &&
+    request.resource.data.projectId == resource.data.projectId &&
+    request.resource.data.rewardCredited == resource.data.rewardCredited);
+  allow delete: if isAdmin();
+}
+
+    // Weekly Bonus - per-user attendance tracking
+    match /weekly_bonuses/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Monthly Bonus - per-user attendance tracking
+    match /monthly_bonuses/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Support Tickets - user can create/read own, admin can read/update all
+    match /support_tickets/{ticketId} {
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Support Chat Messages - user can read messages for their own tickets, admin can read all
+    // Cross-references the parent support_ticket document to verify ownership
+    match /support_chat_messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        get(/databases/$(database)/documents/support_tickets/$(resource.data.ticketId)).data.userId == request.auth.uid
+        || isAdmin()
+      );
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Coupons - admin-managed coupon offers displayed in the Coupons Marketplace
+    match /coupons/{couponId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // FAQs - readable by all authenticated users, writable by admin
+    match /faqs/{faqId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Deny everything else
+    match /{document=**} { allow read, write: if false; }
+  }
+}

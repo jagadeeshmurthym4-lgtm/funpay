@@ -1,0 +1,9 @@
+{
+	"appId": "com.cashspark.app",
+	"appName": "CashSpark",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "https"
+	},
+	"android": {}
+}
