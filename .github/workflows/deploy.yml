@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   build-and-deploy-web:
-    name: Build & Deploy Web (GitHub Pages)
+    name: Build & Deploy Web (GitHub Pages root)
     runs-on: ubuntu-latest
     concurrency: pages-web
     steps:
@@ -28,7 +28,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --base-href=/funpay/
+        run: flutter build web --release --base-href=/
 
       - name: Copy deep-linking verification files
         run: |
@@ -38,12 +38,13 @@ jobs:
         run: |
           cp build/web/index.html build/web/404.html
 
-      - name: Deploy to GitHub Pages (gh-pages branch)
+      - name: Deploy to GitHub Pages (root user-page repo)
         uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          personal_token: ${{ secrets.DEPLOY_TOKEN }}
+          external_repository: jagadeeshmurthym4-lgtm/jagadeeshmurthym4-lgtm.github.io
+          publish_branch: main
           publish_dir: ./build/web
-          publish_branch: gh-pages
           force_orphan: true
 
   build-android:
