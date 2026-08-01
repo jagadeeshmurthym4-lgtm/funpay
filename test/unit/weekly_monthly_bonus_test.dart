@@ -643,7 +643,7 @@ void main() {
       verify(() => mockRewardDataSource.saveMonthlyBonus(any())).called(1);
     });
 
-    test('reward is between ₹1 and ₹3', () async {
+    test('reward is between 1 pts and 3 pts', () async {
       _stubCheckInFlow(
         mockRewardDataSource, mockWalletDataSource, mockNotificationDataSource,
       );

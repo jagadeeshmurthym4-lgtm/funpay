@@ -288,7 +288,7 @@ void main() {
             r.status == ReferralStatus.completed)),
       )).called(1);
 
-      // Assert: referred user gets ₹4 immediate sign-up bonus (they own their wallet)
+      // Assert: referred user gets 4 pts immediate sign-up bonus (they own their wallet)
       verify(() => mockWalletDataSource.updateWalletBalance(
         userId: _newUserId,
         amountChange: 4.0,
@@ -306,7 +306,7 @@ void main() {
             t.status == TransactionStatus.completed)),
       )).called(1);
 
-      // Assert: referrer gets ₹10 sign-up bonus via creditReferralSignupBonus
+      // Assert: referrer gets 10 pts sign-up bonus via creditReferralSignupBonus
       verify(() => mockWalletDataSource.creditReferralSignupBonus(
         referrerUserId: _referrerUserId,
         referralId: any(named: 'referralId'),

@@ -219,7 +219,7 @@ class WalletProvider extends ChangeNotifier {
         }
       }
 
-      // 3. Referral earnings (combine ₹7 bonuses + 5% commissions)
+      // 3. Referral earnings (combine 7 pts bonuses + 5% commissions)
       final referralRepo = _referralRepository;
       if (referralRepo != null) {
         try {

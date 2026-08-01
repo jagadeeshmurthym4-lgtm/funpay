@@ -72,7 +72,7 @@ class EarningsBarChart extends StatelessWidget {
     required this.labels,
     this.barColor = const Color(0xFF4ADE80),
     double? maxVal,
-    this.unit = '₹',
+    this.unit = 'pts',
   }) : maxVal = maxVal ?? (earningsData.isEmpty ? 1 : earningsData.reduce((a, b) => a > b ? a : b));
 
   @override
@@ -342,18 +342,18 @@ class EarningsTrendCard extends StatelessWidget {
 
     return Row(
       children: [
-        _buildTrendItem(theme, 'Today', '₹${todayEarnings.toStringAsFixed(2)}',
+        _buildTrendItem(theme, 'Today', '${todayEarnings.toStringAsFixed(2)} pts',
             trendUp ? Icons.trending_up : Icons.trending_down,
             trendUp ? const Color(0xFF4ADE80) : const Color(0xFFEF4444),
             yesterdayEarnings > 0 ? '${trendDiff.toStringAsFixed(0)}%' : 'New'),
         const SizedBox(width: 12),
-        _buildTrendItem(theme, 'This Week', '₹${weeklyEarnings.toStringAsFixed(2)}',
+        _buildTrendItem(theme, 'This Week', '${weeklyEarnings.toStringAsFixed(2)} pts',
             Icons.calendar_view_week_outlined, const Color(0xFF3B82F6), null),
         const SizedBox(width: 12),
-        _buildTrendItem(theme, 'This Month', '₹${monthlyEarnings.toStringAsFixed(2)}',
+        _buildTrendItem(theme, 'This Month', '${monthlyEarnings.toStringAsFixed(2)} pts',
             Icons.calendar_month_outlined, const Color(0xFFA855F7), null),
         const SizedBox(width: 12),
-        _buildTrendItem(theme, 'Lifetime', '₹${lifetimeEarnings.toStringAsFixed(2)}',
+        _buildTrendItem(theme, 'Lifetime', '${lifetimeEarnings.toStringAsFixed(2)} pts',
             Icons.all_inclusive_outlined, const Color(0xFFF59E0B), null),
       ],
     );
@@ -368,7 +368,7 @@ class EarningsTrendCard extends StatelessWidget {
           const SizedBox(height: 4),
           AnimatedCounter(
             value: double.tryParse(value.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0,
-            prefix: '₹',
+            prefix: 'pts',
             decimals: 2,
             style: TextStyle(
                 fontSize: 11, fontWeight: FontWeight.w700,

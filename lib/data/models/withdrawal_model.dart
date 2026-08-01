@@ -44,7 +44,7 @@ class WithdrawalModel extends WithdrawalEntity {
       withdrawalId: map['withdrawalId'] as String? ?? '',
       userId: map['userId'] as String? ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
-      method: _parseMethod(map['method'] as String? ?? 'upi'),
+      method: _parseMethod(map['method'] as String? ?? 'premiumWeek'),
       accountDetails: map['accountDetails'] as String? ?? '',
       qrCodeUrl: map['qrCodeUrl'] as String?,
       userName: map['userName'] as String?,
@@ -79,10 +79,10 @@ class WithdrawalModel extends WithdrawalEntity {
     };
   }
 
-  static WithdrawalMethod _parseMethod(String value) {
-    return WithdrawalMethod.values.firstWhere(
+  static RedemptionMethod _parseMethod(String value) {
+    return RedemptionMethod.values.firstWhere(
       (e) => e.name == value,
-      orElse: () => WithdrawalMethod.upi,
+      orElse: () => RedemptionMethod.premiumWeek,
     );
   }
 

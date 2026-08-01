@@ -96,16 +96,15 @@ class TermsConditionsScreen extends StatelessWidget {
           ),
           _section(
             theme: theme,
-            title: '6. Withdrawal Rules',
+            title: '6. Points & Redemption Rules',
             body:
-                'Withdrawals allow you to convert your earned rewards into redeemable payouts:\n\n'
-                '• A minimum withdrawal threshold applies and is displayed in the withdrawal section.\n'
-                '• Daily and per-transaction withdrawal limits may apply.\n'
-                '• Withdrawals are subject to verification and fraud review before processing.\n'
-                '• Processing times may vary based on the chosen withdrawal method.\n'
-                '• Fun Pay may charge applicable processing fees, which will be displayed before confirmation.\n'
-                '• Withdrawals to accounts that do not match your registered identity will be rejected.\n'
-                '• Fun Pay reserves the right to cancel pending withdrawals if suspicious activity is detected.',
+                'Points are in-platform only and have no real-world monetary value:\n\n'
+                '• Points are earned by completing eligible activities and are credited to your wallet.\n'
+                '• Points are non-transferable and cannot be exchanged for cash, cryptocurrency, gift cards, or any other monetary reward.\n'
+                '• Points may be redeemed for in-platform perks such as Premium access, bonus spins, exclusive themes, and boosters.\n'
+                '• A minimum redemption threshold applies and is displayed in the Redeem Points section.\n'
+                '• Redemptions are subject to verification and fraud review before processing.\n'
+                '• Fun Pay reserves the right to cancel pending redemptions if suspicious activity is detected.',
           ),
           _section(
             theme: theme,
@@ -128,7 +127,7 @@ class TermsConditionsScreen extends StatelessWidget {
                 '• Warning: First-time minor violations may result in a warning.\n'
                 '• Temporary Suspension: Accounts may be temporarily suspended pending investigation.\n'
                 '• Permanent Suspension: Accounts engaged in fraudulent or abusive behavior will be permanently suspended.\n'
-                '• Reward Forfeiture: All unredeemed rewards and pending withdrawals will be forfeited upon suspension.\n'
+                '• Reward Forfeiture: All unredeemed rewards and pending redemptions will be forfeited upon suspension.\n'
                 '• Legal Action: Fun Pay reserves the right to pursue legal action for severe violations.\n\n'
                 'Users will be notified of suspension with a reason provided where possible. '
                 'If you believe your account was suspended in error, please contact us.',

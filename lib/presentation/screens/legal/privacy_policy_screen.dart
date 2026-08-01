@@ -49,7 +49,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'We collect the following types of information to provide and improve our services:\n\n'
                 '• Account Information: Name, email address, phone number, and profile details provided during registration.\n'
                 '• Authentication Data: Firebase Authentication manages your login credentials securely.\n'
-                '• Transaction History: Records of rewards earned, withdrawals made, and referral activities.\n'
+                '• Transaction History: Records of rewards earned, redemptions made, and referral activities.\n'
                 '• Device Information: Device type, operating system, and unique device identifiers for fraud prevention.\n'
                 '• Ad Interaction Data: Ad views and interactions for analytics and reward calculation.',
           ),
@@ -60,7 +60,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'Fun Pay uses the following Firebase services, operated by Google LLC:\n\n'
                 '• Firebase Authentication: Manages user registration and secure login. We store your email, hashed password, and phone number.\n'
                 '• Cloud Firestore: Stores user profiles, wallet balances, reward history, referral data, and consent agreements.\n'
-                '• Firebase Cloud Messaging: Sends push notifications about rewards, withdrawals, and account updates.\n'
+                '• Firebase Cloud Messaging: Sends push notifications about rewards, redemptions, and account updates.\n'
                 '• Firebase Crashlytics: Collects crash reports and performance data to improve app stability.\n\n'
                 'For more information on how Firebase processes data, visit the Google Privacy Policy.',
           ),
@@ -75,6 +75,22 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 'AdMob uses this data to deliver relevant ads and measure ad performance. '
                 'You can opt out of interest-based advertising through your device settings. '
                 'By using Fun Pay, you consent to AdMob\'s data collection as described in Google\'s Privacy Policy.',
+          ),
+          _section(
+            theme: theme,
+            title: '3a. Google AdSense & Cookies',
+            body:
+                'We use Google AdSense to serve advertisements on the Fun Pay website. '
+                'Google, as a third-party vendor, uses cookies to serve ads on this site.\n\n'
+                '• Google\'s use of the DART cookie enables it to serve ads to users based on their visits to '
+                'this site and other sites on the Internet.\n'
+                '• Users may opt out of the use of the DART cookie by visiting the Google ad and content '
+                'network privacy policy at https://policies.google.com/technologies/ads.\n'
+                '• You can opt out of some third-party vendor\'s use of cookies for interest-based advertising '
+                'by visiting aboutads.info.\n\n'
+                'Third-party vendors, including Google, use cookies to serve ads based on a user\'s prior visits '
+                'to this website or other websites. This Privacy Policy covers the use of cookies by Fun Pay '
+                'and does not cover the use of cookies by any advertisers.',
           ),
           _section(
             theme: theme,
@@ -94,7 +110,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             body:
                 'We use your information to:\n\n'
                 '• Operate, maintain, and improve Fun Pay\n'
-                '• Process and track rewards, withdrawals, and referral bonuses\n'
+                '• Process and track rewards, redemptions, and referral bonuses\n'
                 '• Detect, prevent, and investigate fraudulent or prohibited activities\n'
                 '• Send notifications about rewards, account updates, and policy changes\n'
                 '• Comply with legal obligations and enforce our Terms & Conditions',
@@ -140,7 +156,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 '• Your profile, wallet, and reward data will be permanently removed from Firestore within 30 days.\n'
                 '• Transaction records may be retained for legal and compliance purposes.\n'
                 '• Firebase Authentication account will be deleted.\n'
-                '• Any pending withdrawals will be cancelled.',
+                '• Any pending redemptions will be cancelled.',
           ),
           _section(
             theme: theme,

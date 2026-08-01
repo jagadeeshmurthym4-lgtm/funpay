@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cashspark/core/utils/helpers.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/domain/entities/referral_entity.dart';
@@ -13,9 +12,7 @@ import 'package:cashspark/presentation/screens/admin/admin_streak_multiplier_tab
 import 'package:cashspark/presentation/screens/admin/admin_support_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_tabs.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -113,7 +110,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               tabs: const [
                 Tab(text: 'Dashboard', icon: Icon(Icons.dashboard_outlined, size: 18)),
                 Tab(text: 'Users', icon: Icon(Icons.people_outlined, size: 18)),
-                Tab(text: 'Withdrawals', icon: Icon(Icons.receipt_outlined, size: 18)),
+                Tab(text: 'Redemptions', icon: Icon(Icons.redeem_rounded, size: 18)),
                 Tab(text: 'Wallet', icon: Icon(Icons.account_balance_wallet_outlined, size: 18)),
                 Tab(text: 'Analytics', icon: Icon(Icons.analytics_outlined, size: 18)),
                 Tab(text: 'Banners', icon: Icon(Icons.view_carousel_outlined, size: 18)),
@@ -398,7 +395,7 @@ class _DashboardTabState extends State<_DashboardTab>
                     const SizedBox(width: 10),
                     Expanded(
                       child: _SparklineCard(
-                        label: 'Pending W/D',
+                        label: 'Pending Rdm',
                         value: Helpers.formatNumber(admin.pendingWithdrawals),
                         icon: Icons.hourglass_empty_outlined,
                         color: const Color(0xFFF59E0B),
@@ -512,7 +509,7 @@ class _DashboardTabState extends State<_DashboardTab>
                         ),
                         const SizedBox(height: 6),
                         _MiniMetric(
-                          label: 'Withdrawn',
+                          label: 'Redeemed',
                           value: Helpers.formatCurrency(admin.revenueStats['totalWithdrawn'] ?? 0),
                           color: const Color(0xFFEF4444),
                           theme: theme,
@@ -1226,7 +1223,7 @@ class _UserCardState extends State<_UserCard> {
           const SizedBox(height: 4),
           _UserDetail('Earnings', Helpers.formatCurrency(user.totalEarnings), theme),
           const SizedBox(height: 4),
-          _UserDetail('Withdrawn', Helpers.formatCurrency(user.totalWithdrawn), theme, valueColor: const Color(0xFFEF4444)),
+          _UserDetail('Redeemed', Helpers.formatCurrency(user.totalWithdrawn), theme, valueColor: const Color(0xFFEF4444)),
           const SizedBox(height: 4),
           _UserDetail('Joined', Helpers.formatDateTime(user.createdAt), theme),
           const SizedBox(height: 10),
@@ -1374,7 +1371,7 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Search by name, email, UPI ID, or amount...',
+                hintText: 'Search by name, email, or perk...',
                 prefixIcon: Icon(Icons.search, color: widget.theme.colorScheme.onSurfaceVariant),
                 border: InputBorder.none,
                 filled: false,
@@ -1423,7 +1420,7 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
                 ),
                 const SizedBox(width: 8),
                 _FilterChip(
-                  label: 'Paid',
+                  label: 'Granted',
                   selected: _filterStatus == WithdrawalStatus.paid,
                   onSelected: () {
                     setState(() => _filterStatus = WithdrawalStatus.paid);
@@ -1577,7 +1574,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Icon(Icons.qr_code_scanner_rounded, color: statusColor, size: 20),
+                  Icon(Icons.redeem_rounded, color: statusColor, size: 20),
                   if (isPending && riskLevel != null)
                     Positioned(
                       right: 2,
@@ -1606,7 +1603,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '₹${withdrawal.amount.toStringAsFixed(2)}',
+                        '${withdrawal.amount.toStringAsFixed(2)} pts',
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 6),
@@ -1651,7 +1648,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                           color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text('UPI QR',
+                        child: const Text('PERK',
                             style: TextStyle(fontSize: 9, color: Colors.white)),
                       ),
                     ],
@@ -1731,7 +1728,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
   String _statusLabel() {
     switch (withdrawal.status) {
       case WithdrawalStatus.pending: return 'PENDING';
-      case WithdrawalStatus.paid: return 'PAID';
+      case WithdrawalStatus.paid: return 'GRANTED';
       case WithdrawalStatus.approved: return 'APPROVED';
       case WithdrawalStatus.rejected: return 'REJECTED';
     }
@@ -1756,9 +1753,9 @@ class _AdminWithdrawalCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.qr_code_scanner_rounded, color: theme.colorScheme.primary, size: 22),
+                    Icon(Icons.redeem_rounded, color: theme.colorScheme.primary, size: 22),
                     const SizedBox(width: 8),
-                    Text('Process Withdrawal',
+                    Text('Process Redemption',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
                   ],
                 ),
@@ -1817,7 +1814,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                           children: [
                             Icon(Icons.account_balance_wallet_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
                             const SizedBox(width: 6),
-                            Text('Wallet: ₹${user.walletBalance.toStringAsFixed(2)}',
+                            Text('Wallet: ${user.walletBalance.toStringAsFixed(2)} pts',
                                 style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
                           ],
                         ),
@@ -1826,9 +1823,9 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   ),
 
                 const SizedBox(height: 12),
-                _DialogDetailRow('Amount', '₹${withdrawal.amount.toStringAsFixed(2)}', theme, bold: true),
+                _DialogDetailRow('Amount', '${withdrawal.amount.toStringAsFixed(2)} pts', theme, bold: true),
                 const SizedBox(height: 4),
-                _DialogDetailRow('UPI ID', withdrawal.accountDetails, theme),
+                _DialogDetailRow('Perk', withdrawal.accountDetails, theme),
                 const SizedBox(height: 4),
                 if (withdrawal.userName != null)
                   _DialogDetailRow('Name', withdrawal.userName!, theme),
@@ -1841,122 +1838,9 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   _DialogDetailRow('Phone', withdrawal.userPhone!, theme),
                 ],
                 const SizedBox(height: 4),
-                _DialogDetailRow('Wallet Balance', '₹${withdrawal.walletBalanceAtRequest.toStringAsFixed(2)}', theme),
+                _DialogDetailRow('Wallet Balance', '${withdrawal.walletBalanceAtRequest.toStringAsFixed(2)} pts', theme),
                 const SizedBox(height: 12),
 
-                // QR Code Preview
-                if (withdrawal.qrCodeUrl != null)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.qr_code_scanner_rounded, size: 18, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text('UPI QR Code',
-                                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () => _showQrPreview(context, withdrawal.qrCodeUrl!),
-                            child: Container(
-                              height: 120,
-                              width: 120,
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(11),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    CachedNetworkImage(
-                                      imageUrl: withdrawal.qrCodeUrl!,
-                                      fit: BoxFit.contain,
-                                      placeholder: (_, __) => const Center(
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                      ),
-                                      errorWidget: (_, __, ___) => Icon(Icons.broken_image_outlined,
-                                          color: theme.colorScheme.error, size: 32),
-                                    ),
-                                    Positioned(
-                                      right: 4,
-                                      bottom: 4,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54,
-                                          borderRadius: BorderRadius.circular(6),
-                                        ),
-                                        child: const Icon(Icons.zoom_in, color: Colors.white, size: 14),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton.outlined(
-                              onPressed: () => _showQrPreview(context, withdrawal.qrCodeUrl!),
-                              icon: const Icon(Icons.zoom_in_rounded, size: 18),
-                              tooltip: 'Preview & Zoom',
-                              style: IconButton.styleFrom(
-                                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton.outlined(
-                              onPressed: () => _downloadQrCode(context, withdrawal.qrCodeUrl!),
-                              icon: const Icon(Icons.download_rounded, size: 18),
-                              tooltip: 'Download QR Code',
-                              style: IconButton.styleFrom(
-                                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Preview/zoom or download the QR code. Send payment to this UPI QR, then mark as paid.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontSize: 11,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 12),
                 // Transaction ID field
                 TextField(
                   controller: transactionIdController,
@@ -2009,7 +1893,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                           if (!success) {
                             ScaffoldMessenger.of(ctx).showSnackBar(
                               SnackBar(
-                                content: Text(withdrawalProvider.errorMessage ?? 'Failed to reject withdrawal'),
+                                content: Text(withdrawalProvider.errorMessage ?? 'Failed to reject redemption'),
                                 behavior: SnackBarBehavior.floating,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
@@ -2043,7 +1927,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                               if (!success) {
                                 ScaffoldMessenger.of(ctx).showSnackBar(
                                   SnackBar(
-                                    content: Text(withdrawalProvider.errorMessage ?? 'Failed to process withdrawal'),
+                                    content: Text(withdrawalProvider.errorMessage ?? 'Failed to process redemption'),
                                     behavior: SnackBarBehavior.floating,
                                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                   ),
@@ -2073,128 +1957,8 @@ class _AdminWithdrawalCard extends StatelessWidget {
     );
   }
 
-  void _showQrPreview(BuildContext context, String url) {
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(24),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: InteractiveViewer(
-                      minScale: 0.5,
-                      maxScale: 4.0,
-                      child: CachedNetworkImage(
-                        imageUrl: url,
-                        fit: BoxFit.contain,
-                        width: 300,
-                        height: 300,
-                        placeholder: (_, __) => Container(
-                          height: 300,
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: const Center(child: CircularProgressIndicator()),
-                        ),
-                        errorWidget: (_, __, ___) => Container(
-                          height: 300,
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: const Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.broken_image_outlined, size: 48),
-                              Text('Failed to load image'),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _downloadQrCode(context, url),
-                    icon: const Icon(Icons.download_rounded, size: 18),
-                    label: const Text('Download QR Code'),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              right: 4,
-              top: 4,
-              child: IconButton(
-                onPressed: () => Navigator.pop(ctx),
-                icon: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.black54,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.close, color: Colors.white, size: 20),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  /// Opens the QR code image URL in the device browser so the admin can
-  /// save/download it.
-  Future<void> _downloadQrCode(BuildContext context, String url) async {
-    try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('Could not open QR code image. Try copying the URL manually.'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              action: SnackBarAction(
-                label: 'Copy URL',
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: url));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('QR code URL copied to clipboard!'),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to open QR code: $e'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      }
-    }
-  }
+  /// Process a redemption request (approve / grant points / reject).
 }
 
 class _DialogDetailRow extends StatelessWidget {
@@ -2350,7 +2114,7 @@ class _WalletTabState extends State<_WalletTab> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Amount',
-                    prefixText: '₹ ',
+                    prefixText: 'pts ',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: widget.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -2640,21 +2404,21 @@ class _SettingsTabState extends State<_SettingsTab> {
                 const SizedBox(height: 20),
 
                 _SettingsSection(title: 'Referral Bonuses', theme: widget.theme, children: [
-                  _SettingsField(label: 'Referrer Bonus (₹)', controller: _bonusReferrerController, theme: widget.theme),
+                  _SettingsField(label: 'Referrer Bonus (pts)', controller: _bonusReferrerController, theme: widget.theme),
                   const SizedBox(height: 8),
-                  _SettingsField(label: 'Referred Bonus (₹)', controller: _bonusReferredController, theme: widget.theme),
+                  _SettingsField(label: 'Referred Bonus (pts)', controller: _bonusReferredController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 16),
 
                 _SettingsSection(title: 'Reward Amounts', theme: widget.theme, children: [
-                  _SettingsField(label: 'Ad Reward (₹)', controller: _adRewardController, theme: widget.theme),
+                  _SettingsField(label: 'Ad Reward (pts)', controller: _adRewardController, theme: widget.theme),
                   const SizedBox(height: 8),
-                  _SettingsField(label: 'Daily Check-In (₹)', controller: _dailyCheckInController, theme: widget.theme),
+                  _SettingsField(label: 'Daily Check-In (pts)', controller: _dailyCheckInController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 16),
 
-                _SettingsSection(title: 'Withdrawal Limits', theme: widget.theme, children: [
-                  _SettingsField(label: 'Min Withdrawal (₹)', controller: _minWithdrawalController, theme: widget.theme),
+                _SettingsSection(title: 'Redemption Limits', theme: widget.theme, children: [
+                  _SettingsField(label: 'Min Redemption (pts)', controller: _minWithdrawalController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 24),
 
@@ -2706,9 +2470,9 @@ class _SettingsTabState extends State<_SettingsTab> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: _SettingsField(label: 'Ad Reward Amount (₹)', controller: _adRewardAmountCtrl, theme: widget.theme)),
+                      Expanded(child: _SettingsField(label: 'Ad Reward Amount (pts)', controller: _adRewardAmountCtrl, theme: widget.theme)),
                       const SizedBox(width: 8),
-                      Expanded(child: _SettingsField(label: 'Min Reward for Ad (₹)', controller: _minRewardForAdCtrl, theme: widget.theme)),
+                      Expanded(child: _SettingsField(label: 'Min Reward for Ad (pts)', controller: _minRewardForAdCtrl, theme: widget.theme)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -3046,7 +2810,7 @@ class _ReferrerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '₹${totalCommission.toStringAsFixed(2)}',
+                  '${totalCommission.toStringAsFixed(2)} pts',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -3075,7 +2839,7 @@ class _ReferrerCard extends StatelessWidget {
               const SizedBox(width: 6),
               _MiniBadge(
                 label: 'Earned',
-                value: '₹${totalCommission.toStringAsFixed(0)}',
+                value: '${totalCommission.toStringAsFixed(0)} pts',
                 color: const Color(0xFF8B5CF6),
               ),
             ],
@@ -3228,7 +2992,7 @@ class _ReferredUserTile extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            isRewarded ? 'Bonus: ₹7' : 'Not credited',
+                            isRewarded ? 'Bonus: 7 pts' : 'Not credited',
                             style: TextStyle(
                               fontSize: 8,
                               fontWeight: FontWeight.w600,
@@ -3370,8 +3134,8 @@ Future<void> _showCreditDialog(
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Credit Amount (₹)',
-                    prefixText: '₹ ',
+                    labelText: 'Credit Amount (pts)',
+                    prefixText: 'pts ',
                     prefixStyle: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -3449,7 +3213,7 @@ Future<void> _showCreditDialog(
       SnackBar(
         content: Text(
           success
-              ? '₹${amount.toStringAsFixed(2)} credited to referrer!'
+              ? '${amount.toStringAsFixed(2)} pts credited to referrer!'
               : admin.errorMessage ?? 'Failed to credit',
         ),
         behavior: SnackBarBehavior.floating,
@@ -3531,8 +3295,8 @@ Future<void> _showBulkCreditDialog(
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Credit Amount (₹) per Referral',
-                    prefixText: '₹ ',
+                    labelText: 'Credit Amount (pts) per Referral',
+                    prefixText: 'pts ',
                     prefixStyle: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -3567,7 +3331,7 @@ Future<void> _showBulkCreditDialog(
 
                 const SizedBox(height: 4),
                 Text(
-                  'Total: ₹${(double.tryParse(amountController.text) ?? 7) * pendingCount}',
+                  'Total: ${(double.tryParse(amountController.text) ?? 7) * pendingCount} pts',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,

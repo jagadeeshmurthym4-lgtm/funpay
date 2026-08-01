@@ -301,7 +301,7 @@ void main() {
       expect(result, isTrue);
       expect(adminProvider.successMessage, contains('Credited'));
 
-      // Wallet credited with default ₹7 and default description
+      // Wallet credited with default 7 pts and default description
       expect(mockRepository.creditCalls, hasLength(1));
       expect(mockRepository.creditCalls.first['userId'], 'user-1');
       expect(mockRepository.creditCalls.first['amount'], 7.0);

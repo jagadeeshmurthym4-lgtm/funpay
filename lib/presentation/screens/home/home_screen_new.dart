@@ -232,7 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '₹',
+                        'pts',
                         style: rs.h1.copyWith(
                           fontSize: rs.fs(18),
                           fontWeight: FontWeight.w600,
@@ -265,7 +265,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '₹${earnings.toStringAsFixed(0)}',
+                      '${earnings.toStringAsFixed(0)} pts',
                       style: rs.bodySmall.copyWith(
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF4ADE80),
@@ -294,7 +294,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Text(
-                '₹${earnings.toStringAsFixed(0)} / ₹$target',
+                '${earnings.toStringAsFixed(0)} pts / $target pts',
                 style: rs.bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppTheme.accentGreen,
@@ -361,9 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
       height: rs.height(52),
       child: ElevatedButton.icon(
         onPressed: () => Navigator.pushNamed(context, AppRouter.withdrawals),
-        icon: Icon(Icons.payments_outlined, size: rs.iconSm),
+        icon: Icon(Icons.redeem_rounded, size: rs.iconSm),
         label: Text(
-          'Withdraw Funds',
+          'Redeem Points',
           style: rs.button,
         ),
         style: ElevatedButton.styleFrom(

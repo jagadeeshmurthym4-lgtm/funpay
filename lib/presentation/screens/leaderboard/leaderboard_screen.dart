@@ -228,7 +228,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       ),
                       // Earnings
                       Text(
-                        '₹${entry.user.totalEarnings.toStringAsFixed(0)}',
+                        '${entry.user.totalEarnings.toStringAsFixed(0)} pts',
                         style: TextStyle(
                           fontSize: entry.rank == 1 ? 14 : 12,
                           fontWeight: FontWeight.w800,
@@ -331,7 +331,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
           ),
           Text(
-            '₹${user.totalEarnings.toStringAsFixed(0)}',
+            '${user.totalEarnings.toStringAsFixed(0)} pts',
             style: const TextStyle(
               fontWeight: FontWeight.w800,
               fontSize: 15,
@@ -460,7 +460,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     ),
                   const SizedBox(width: 8),
                   Text(
-                    '₹${user.totalEarnings.toStringAsFixed(0)}',
+                    '${user.totalEarnings.toStringAsFixed(0)} pts',
                     style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 14,
@@ -580,7 +580,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   Icon(Icons.monetization_on_outlined, size: 16, color: const Color(0xFFF59E0B)),
                   const SizedBox(width: 6),
                   Text(
-                    '₹${user.totalEarnings.toStringAsFixed(2)}',
+                    '${user.totalEarnings.toStringAsFixed(2)} pts',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

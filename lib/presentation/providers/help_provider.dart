@@ -337,16 +337,16 @@ class HelpProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _defaultFAQs() {
     return [
       {'question': 'How do I earn rewards?', 'answer': 'You can earn rewards through daily check-ins, watching ads, completing tasks, referring friends, and participating in promotional events.', 'category': 'earnings', 'order': 1},
-      {'question': 'How do I withdraw my earnings?', 'answer': 'Go to the Withdraw section from the home screen. Select your preferred method (UPI, Paytm, or Bank Transfer). Minimum withdrawal is \u20B945 and maximum is \u20B9500 per transaction.', 'category': 'withdrawals', 'order': 2},
-      {'question': 'How long do withdrawals take?', 'answer': 'Withdrawals are reviewed and typically processed within 24-48 hours. Approved withdrawals are sent immediately.', 'category': 'withdrawals', 'order': 3},
+      {'question': 'How do I redeem my points?', 'answer': 'Go to the Redeem Points section from the home screen. Choose an in-platform perk such as Premium access, bonus spins, exclusive themes, or boosters. Minimum redemption is 10 pts.', 'category': 'withdrawals', 'order': 2},
+      {'question': 'How long do redemptions take?', 'answer': 'Redemption requests are reviewed and typically processed within 24-48 hours. Once approved, your chosen perk is granted to your account.', 'category': 'withdrawals', 'order': 3},
       {'question': 'How does the referral program work?', 'answer': 'Share your unique referral code with friends. When they sign up using your code, both you and your friend receive a bonus. Track referrals in the Referral Dashboard.', 'category': 'referrals', 'order': 4},
-      {'question': 'Is there a limit on daily earnings?', 'answer': 'Yes, there are daily limits to ensure fair usage. Check the Rewards section for current limits. Daily withdrawal limit is \u20B91,000.', 'category': 'earnings', 'order': 5},
+      {'question': 'Is there a limit on daily earnings?', 'answer': 'Yes, there are daily limits to ensure fair usage. Check the Rewards section for current limits. Points have no cash value and can only be spent on in-platform perks.', 'category': 'earnings', 'order': 5},
       {'question': 'How do I reset my password?', 'answer': 'Go to the Login screen and tap "Forgot Password". Enter your email / Gmail address to receive a password reset link.', 'category': 'account', 'order': 6},
       {'question': 'Can I have multiple accounts?', 'answer': 'No, multiple accounts are strictly prohibited. Our fraud detection system monitors for duplicate accounts. Violations result in account suspension.', 'category': 'account', 'order': 7},
       {'question': 'How is my data protected?', 'answer': 'Your data is encrypted and stored securely with Firebase Firestore. We implement device fingerprinting, login monitoring, and fraud detection.', 'category': 'privacy', 'order': 8},
       {'question': 'What happens if I delete my account?', 'answer': 'Account deletion is permanent. All personal data, rewards, and wallet balance will be deleted. This action cannot be undone.', 'category': 'account', 'order': 9},
       {'question': 'How do I contact support?', 'answer': 'Email us at support@funpay.com or use the Help Center to raise a ticket. We typically respond within 24 hours.', 'category': 'technical', 'order': 10},
-      {'question': 'Why was my withdrawal rejected?', 'answer': 'Withdrawals may be rejected due to incomplete profile, suspicious activity, or exceeding daily limits. Contact support for details.', 'category': 'withdrawals', 'order': 11},
+      {'question': 'Why was my redemption rejected?', 'answer': 'Redemptions may be rejected due to incomplete profile, suspicious activity, or exceeding limits. Contact support for details.', 'category': 'withdrawals', 'order': 11},
       {'question': 'How do I update my profile?', 'answer': 'Go to your Profile screen and tap the Edit button. You can update your name, phone, email, and other details there.', 'category': 'account', 'order': 12},
     ];
   }

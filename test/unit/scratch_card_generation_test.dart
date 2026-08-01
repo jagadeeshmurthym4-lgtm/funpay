@@ -554,7 +554,7 @@ void main() {
       verifyNever(() => mockReferral.updateReferralReward(any(), any()));
     });
 
-    test('credits ₹7 bonus to referrer on first approved project', () async {
+    test('credits 7 pts bonus to referrer on first approved project', () async {
       final referralRecord = createReferralRecord(firstProjectRewarded: false);
       _stubCreditRewardFlow(
         mockAffiliate, mockWallet, mockNotification, mockScratchCard, mockReferral,
@@ -565,7 +565,7 @@ void main() {
 
       expect(result, isTrue);
 
-      // Referrer's wallet credited with ₹7
+      // Referrer's wallet credited with 7 pts
       verify(() => mockWallet.updateWalletBalance(
         userId: referrerId,
         amountChange: 7.0,

@@ -4,20 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('Helpers.formatCurrency', () {
     test('formats positive amounts correctly', () {
-      expect(Helpers.formatCurrency(0), '₹0.00');
-      expect(Helpers.formatCurrency(10.5), '₹10.50');
-      expect(Helpers.formatCurrency(1000), '₹1000.00');
-      expect(Helpers.formatCurrency(99.99), '₹99.99');
-      expect(Helpers.formatCurrency(1234.567), '₹1234.57');
+      expect(Helpers.formatCurrency(0), '0.00 pts');
+      expect(Helpers.formatCurrency(10.5), '10.50 pts');
+      expect(Helpers.formatCurrency(1000), '1000.00 pts');
+      expect(Helpers.formatCurrency(99.99), '99.99 pts');
+      expect(Helpers.formatCurrency(1234.567), '1234.57 pts');
     });
 
     test('formats zero correctly', () {
-      expect(Helpers.formatCurrency(0.0), '₹0.00');
+      expect(Helpers.formatCurrency(0.0), '0.00 pts');
     });
 
     test('formats negative amounts correctly', () {
-      expect(Helpers.formatCurrency(-10), '₹-10.00');
-      expect(Helpers.formatCurrency(-0.5), '₹-0.50');
+      expect(Helpers.formatCurrency(-10), '-10.00 pts');
+      expect(Helpers.formatCurrency(-0.5), '-0.50 pts');
     });
   });
 

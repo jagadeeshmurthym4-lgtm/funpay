@@ -151,7 +151,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                         Text('Referral Rewards', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15,
                             color: isDark ? Colors.white : const Color(0xFF0F172A))),
                         const SizedBox(height: 4),
-                        Text('Earn ₹7 when a referred user completes their FIRST project!\n'
+                        Text('Earn 7 pts when a referred user completes their FIRST project!\n'
                             'Then earn 5% commission on every future project reward!',
                             style: TextStyle(fontSize: 12, color: isDark ? AppTheme.textMuted : const Color(0xFF94A3B8))),
                       ]),
@@ -267,7 +267,7 @@ class _ReferralDashboardScreenState extends State<ReferralDashboardScreen> {
                                     ),
                                     if (nextLevel != null)
                                       Text(
-                                        '₹${nextLevel.rewardAmount.toStringAsFixed(0)}',
+                                        '${nextLevel.rewardAmount.toStringAsFixed(0)} pts',
                                         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
                                             color: AppTheme.accentGreen),
                                       ),
@@ -372,7 +372,7 @@ class _ReferralCard extends StatelessWidget {
             ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text('+₹${ref.rewardAmount.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.accentGreen)),
+            Text('+${ref.rewardAmount.toStringAsFixed(2)} pts', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppTheme.accentGreen)),
             const SizedBox(height: 4),
             _StatusBadge(_statusLabel(ref.status), color),
           ]),

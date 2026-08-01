@@ -61,7 +61,7 @@ class _AdminAnalyticsTabState extends State<AdminAnalyticsTab> {
                 SizedBox(
                   height: 180,
                   child: Center(
-                    child: Text('Revenue: ₹${Helpers.formatCurrency(widget.admin.totalEarnings)}',
+                    child: Text('Revenue: ${Helpers.formatCurrency(widget.admin.totalEarnings)} pts',
                         style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                   ),
                 ),
@@ -179,8 +179,8 @@ class _AdminAnalyticsTabState extends State<AdminAnalyticsTab> {
                 ),
                 const SizedBox(height: 16),
                 _metricRow(theme, 'Avg Earnings/User', widget.admin.totalUsers > 0
-                    ? '₹${(widget.admin.totalEarnings / widget.admin.totalUsers).toStringAsFixed(2)}'
-                    : '₹0'),
+                    ? '${(widget.admin.totalEarnings / widget.admin.totalUsers).toStringAsFixed(2)} pts'
+                    : '0 pts'),
                 const SizedBox(height: 8),
                 _metricRow(theme, 'Conversion Rate',
                     '${widget.admin.totalUsers > 0 ? ((widget.admin.activeUsers / widget.admin.totalUsers) * 100).toStringAsFixed(1) : 0}%'),

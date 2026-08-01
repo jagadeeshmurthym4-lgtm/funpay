@@ -950,7 +950,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '₹${item.rewardAmount.toStringAsFixed(0)}',
+                          '${item.rewardAmount.toStringAsFixed(0)} pts',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,

@@ -240,7 +240,7 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(child: PremiumStatCard(icon: Icons.arrow_upward_outlined, label: 'Withdrawn', value: Helpers.formatCurrency(liveWithdrawn), color: AppTheme.accentOrange)),
+                          Expanded(child: PremiumStatCard(icon: Icons.arrow_upward_outlined, label: 'Redeemed', value: Helpers.formatCurrency(liveWithdrawn), color: AppTheme.accentOrange)),
                           const SizedBox(width: 12),
                           Expanded(child: PremiumStatCard(icon: Icons.calendar_today_outlined, label: 'Joined', value: user != null ? '${user.createdAt.day}/${user.createdAt.month}/${user.createdAt.year}' : '---', color: AppTheme.accentBlue)),
                         ],

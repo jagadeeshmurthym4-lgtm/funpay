@@ -330,7 +330,7 @@ class ContactUsScreen extends StatelessWidget {
                   const Divider(height: 16),
                   _infoRow(theme, 'Account Issues', 'Within 12 hours'),
                   const Divider(height: 16),
-                  _infoRow(theme, 'Withdrawal Issues', 'Within 6 hours'),
+                  _infoRow(theme, 'Redemption Issues', 'Within 6 hours'),
                   const Divider(height: 16),
                   _infoRow(theme, 'Urgent Security Issues', 'Within 2 hours'),
                 ],

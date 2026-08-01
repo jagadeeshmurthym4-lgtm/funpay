@@ -50,7 +50,7 @@ class AboutUsScreen extends StatelessWidget {
           _section(theme, 'What We Offer',
               '• Daily rewards and bonuses\n'
               '• Referral program with generous bonuses\n'
-              '• Secure wallet and withdrawal system\n'
+              '• Secure wallet and redemption system\n'
               '• Real-time transaction tracking\n'
               '• 24/7 customer support\n'
               '• Fraud detection and account protection'),

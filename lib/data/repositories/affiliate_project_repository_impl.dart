@@ -465,14 +465,14 @@ class AffiliateProjectRepositoryImpl implements AffiliateProjectRepository {
       userId: userId,
       title: 'Reward Credited 💰',
       message:
-          '₹${rewardAmount.toStringAsFixed(2)} has been credited to your wallet for completing "${participation.projectTitle}"!',
+          '${rewardAmount.toStringAsFixed(2)} pts has been credited to your wallet for completing "${participation.projectTitle}"!',
       type: NotificationType.reward,
     );
     await _sendFcmTargetedPush(
       userId: userId,
       title: 'Reward Credited 💰',
       message:
-          '₹${rewardAmount.toStringAsFixed(2)} has been credited to your wallet for completing "${participation.projectTitle}"!',
+          '${rewardAmount.toStringAsFixed(2)} pts has been credited to your wallet for completing "${participation.projectTitle}"!',
       type: 'reward',
     );
 
@@ -495,13 +495,13 @@ class AffiliateProjectRepositoryImpl implements AffiliateProjectRepository {
         await _createNotification(
           userId: userId,
           title: '🎴 Scratch Card Earned!',
-          message: 'You earned a Scratch Card for completing "${participation.projectTitle}"! Scratch it to win up to ₹7!',
+          message: 'You earned a Scratch Card for completing "${participation.projectTitle}"! Scratch it to win up to 7 pts!',
           type: NotificationType.reward,
         );
         await _sendFcmTargetedPush(
           userId: userId,
           title: '🎴 Scratch Card Earned!',
-          message: 'You earned a Scratch Card for completing "${participation.projectTitle}"! Scratch it to win up to ₹7!',
+          message: 'You earned a Scratch Card for completing "${participation.projectTitle}"! Scratch it to win up to 7 pts!',
           type: 'reward',
         );
       }
@@ -536,15 +536,15 @@ class AffiliateProjectRepositoryImpl implements AffiliateProjectRepository {
           String notificationTitle;
 
           if (!referrerRecord.firstProjectRewarded) {
-            // First approved project → ₹7 bonus
+            // First approved project → 7 pts bonus
             referrerBonus = 7.0;
-            bonusDescription = '₹7 first-project referral bonus for "$pTitle"';
+            bonusDescription = '7 pts first-project referral bonus for "$pTitle"';
             notificationTitle = '🎉 First Project Referral Bonus';
           } else {
             // Subsequent approved projects → 5% commission
             referrerBonus = reward * 0.05;
             referrerBonus = double.parse(referrerBonus.toStringAsFixed(2));
-            bonusDescription = '5% commission (₹${referrerBonus.toStringAsFixed(2)}) from "$pTitle"';
+            bonusDescription = '5% commission (${referrerBonus.toStringAsFixed(2)} pts) from "$pTitle"';
             notificationTitle = '💰 Referral Commission Earned';
           }
 

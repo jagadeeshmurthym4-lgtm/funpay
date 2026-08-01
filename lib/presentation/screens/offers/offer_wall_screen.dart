@@ -31,7 +31,7 @@ const List<_OfferWallItem> _wallItems = [
   _OfferWallItem(
     title: 'Install App',
     subtitle: 'Download & install partner apps to earn instant rewards',
-    reward: '₹50',
+    reward: '50 pts',
     icon: Icons.download_outlined,
     color: Color(0xFF4ADE80),
     category: 'Install',
@@ -39,7 +39,7 @@ const List<_OfferWallItem> _wallItems = [
   _OfferWallItem(
     title: 'Open Account',
     subtitle: 'Sign up on partner platforms using your referral link',
-    reward: '₹80',
+    reward: '80 pts',
     icon: Icons.person_add_outlined,
     color: Color(0xFF3B82F6),
     category: 'Sign Up',
@@ -47,7 +47,7 @@ const List<_OfferWallItem> _wallItems = [
   _OfferWallItem(
     title: 'Complete Survey',
     subtitle: 'Share your feedback in short surveys to earn rewards',
-    reward: '₹40',
+    reward: '40 pts',
     icon: Icons.quiz_outlined,
     color: Color(0xFF8B5CF6),
     category: 'Survey',
@@ -55,7 +55,7 @@ const List<_OfferWallItem> _wallItems = [
   _OfferWallItem(
     title: 'Sign Up',
     subtitle: 'Create a free account on partner websites & apps',
-    reward: '₹60',
+    reward: '60 pts',
     icon: Icons.app_registration_outlined,
     color: Color(0xFFF59E0B),
     category: 'Sign Up',
@@ -63,7 +63,7 @@ const List<_OfferWallItem> _wallItems = [
   _OfferWallItem(
     title: 'Watch Video',
     subtitle: 'Watch short promotional videos and earn cash rewards',
-    reward: '₹25',
+    reward: '25 pts',
     icon: Icons.play_circle_outline,
     color: Color(0xFFEC4899),
     category: 'Watch',

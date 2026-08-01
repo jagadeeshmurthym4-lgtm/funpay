@@ -87,7 +87,7 @@ class ScratchCardProvider extends ChangeNotifier {
     _isScratching = true;
     notifyListeners();
 
-    // Random reward: ₹2, ₹3, ₹4, ₹5, ₹6, or ₹7
+    // Random reward: 2 pts, 3 pts, 4 pts, 5 pts, 6 pts, or 7 pts
     final possibleRewards = [2.0, 3.0, 4.0, 5.0, 6.0, 7.0];
     final rewardAmount = possibleRewards[Random().nextInt(possibleRewards.length)];
 

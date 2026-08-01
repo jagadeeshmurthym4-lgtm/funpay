@@ -250,7 +250,7 @@ class _ReferralLevelsScreenState extends State<ReferralLevelsScreen>
                               Column(
                                 children: [
                                   Text(
-                                    '₹${nextLevel.rewardAmount.toStringAsFixed(0)}',
+                                    '${nextLevel.rewardAmount.toStringAsFixed(0)} pts',
                                     style: theme.textTheme.titleLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: theme.colorScheme.primary,
@@ -521,7 +521,7 @@ class _ReferralLevelsScreenState extends State<ReferralLevelsScreen>
             Column(
               children: [
                 Text(
-                  '₹${level.rewardAmount.toStringAsFixed(0)}',
+                  '${level.rewardAmount.toStringAsFixed(0)} pts',
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isClaimed

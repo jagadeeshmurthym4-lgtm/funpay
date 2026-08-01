@@ -30,7 +30,7 @@ class ProjectEntity {
   });
 
   Color get color => Color(colorValue);
-  String get reward => '₹${rewardAmount.toStringAsFixed(0)}';
+  String get reward => '${rewardAmount.toStringAsFixed(0)} pts';
 
   ProjectEntity copyWith({
     String? projectId,

@@ -81,11 +81,11 @@ class DisclaimerScreen extends StatelessWidget {
                 '• Reward rates, bonus structures, and earning limits.\n'
                 '• Daily ad watch limits and reward values per ad.\n'
                 '• Referral program terms and bonus amounts.\n'
-                '• Withdrawal thresholds, limits, and processing fees.\n'
+                '• Redemption thresholds, limits, and perk availability.\n'
                 '• Features, functionality, and user interface.\n'
                 '• Terms, conditions, and policies.\n\n'
                 'Fun Pay is not liable for any impact that modifications may have on your existing rewards, '
-                'pending withdrawals, or overall user experience.',
+                'pending redemptions, or overall user experience.',
           ),
           _section(
             theme: theme,

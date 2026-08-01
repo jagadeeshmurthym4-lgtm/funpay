@@ -81,17 +81,17 @@ class RewardRepositoryImpl implements RewardRepository {
 
       await _ensureWalletExists(userId);
       // Weighted random reward: most of the time gives lower amount
-      // Range: ₹0.80 - ₹2.00, biased toward lower end
+      // Range: 0.80 pts - 2.00 pts, biased toward lower end
       final roll = Random().nextInt(100);
       double rewardAmount;
       if (roll < 60) {
-        // 60% chance: ₹0.80 - ₹1.20
+        // 60% chance: 0.80 pts - 1.20 pts
         rewardAmount = 0.80 + Random().nextDouble() * 0.40;
       } else if (roll < 90) {
-        // 30% chance: ₹1.20 - ₹1.60
+        // 30% chance: 1.20 pts - 1.60 pts
         rewardAmount = 1.20 + Random().nextDouble() * 0.40;
       } else {
-        // 10% chance: ₹1.60 - ₹2.00
+        // 10% chance: 1.60 pts - 2.00 pts
         rewardAmount = 1.60 + Random().nextDouble() * 0.40;
       }
       rewardAmount = (rewardAmount * 100).roundToDouble() / 100; // round to 2 decimals
@@ -203,7 +203,7 @@ class RewardRepositoryImpl implements RewardRepository {
         }
       }
 
-      // Random base reward: ₹1, ₹2, or ₹3
+      // Random base reward: 1 pts, 2 pts, or 3 pts
       final baseAmount = [1.0, 2.0, 3.0][Random().nextInt(3)];
 
       // ─── Apply Streak Multiplier ────────────────────────────
@@ -216,7 +216,7 @@ class RewardRepositoryImpl implements RewardRepository {
           finalRewardAmount = (baseAmount * multiplier * 100).roundToDouble() / 100;
           if (multiplier > 1.0) {
             debugPrint(
-              'Streak multiplier applied: $newStreakCount-day streak → ${multiplier}x, ₹$baseAmount → ₹$finalRewardAmount',
+              'Streak multiplier applied: $newStreakCount-day streak → ${multiplier}x, $baseAmount pts → $finalRewardAmount pts',
             );
           }
         }
@@ -606,13 +606,13 @@ class RewardRepositoryImpl implements RewardRepository {
           await _createNotification(
             userId: userId,
             title: '🎯 Weekly Bonus Ready!',
-            message: 'You have checked in all 7 days this week! Claim your ₹15 reward now.',
+            message: 'You have checked in all 7 days this week! Claim your 15 pts reward now.',
             type: NotificationType.reward,
           );
           await _sendFcmTargetedPush(
             userId: userId,
             title: '🎯 Weekly Bonus Ready!',
-            message: 'You have checked in all 7 days this week! Claim your ₹15 reward now.',
+            message: 'You have checked in all 7 days this week! Claim your 15 pts reward now.',
           );
         }
       }
@@ -669,7 +669,7 @@ class RewardRepositoryImpl implements RewardRepository {
         await _createNotification(
           userId: userId,
           title: '🎯 Weekly Bonus Ready!',
-          message: 'You have checked in all 7 days this week! Claim your ₹15 reward now.',
+          message: 'You have checked in all 7 days this week! Claim your 15 pts reward now.',
           type: NotificationType.reward,
         );
       }
@@ -720,7 +720,7 @@ class RewardRepositoryImpl implements RewardRepository {
         await _createNotification(
           userId: userId,
           title: '🎯 Monthly Bonus Ready!',
-          message: 'You have checked in every day this month! Claim your ₹40 reward now.',
+          message: 'You have checked in every day this month! Claim your 40 pts reward now.',
           type: NotificationType.reward,
         );
       }
@@ -815,14 +815,14 @@ class RewardRepositoryImpl implements RewardRepository {
           await _createNotification(
             userId: userId,
             title: '🎯 Monthly Bonus Ready!',
-            message: 'You have checked in every day this month! Claim your ₹40 reward now.',
+            message: 'You have checked in every day this month! Claim your 40 pts reward now.',
             type: NotificationType.reward,
           );
           // Send FCM push notification for the targeted user
           await _sendFcmTargetedPush(
             userId: userId,
             title: '🎯 Monthly Bonus Ready!',
-            message: 'You have checked in every day this month! Claim your ₹40 reward now.',
+            message: 'You have checked in every day this month! Claim your 40 pts reward now.',
           );
         }
       }

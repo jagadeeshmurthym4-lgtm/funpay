@@ -41,7 +41,7 @@ class ReferralProvider extends ChangeNotifier {
   /// Lifetime 5% commission earned from referred users' approved projects.
   double get lifetimeProjectCommission => _lifetimeProjectCommission;
 
-  /// Total ₹7 first-project bonuses earned.
+  /// Total 7 pts first-project bonuses earned.
   double get firstProjectBonusTotal => _firstProjectBonusTotal;
 
   void _safeNotifyListeners() {

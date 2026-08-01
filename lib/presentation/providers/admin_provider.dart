@@ -260,7 +260,7 @@ notifyListeners();
         amount: amount,
         description: description,
       );
-      _successMessage = 'Credited ₹${amount.toStringAsFixed(2)} to user';
+      _successMessage = 'Credited ${amount.toStringAsFixed(2)} pts to user';
       _refreshUserInList(userId);
       notifyListeners();
       return true;
@@ -288,7 +288,7 @@ notifyListeners();
         amount: amount,
         description: description,
       );
-      _successMessage = 'Debited ₹${amount.toStringAsFixed(2)} from user';
+      _successMessage = 'Debited ${amount.toStringAsFixed(2)} pts from user';
       _refreshUserInList(userId);
       notifyListeners();
       return true;
@@ -604,7 +604,7 @@ notifyListeners();
     final balance = _revenueStats['remainingBalance'] ?? 0;
     if (balance > 10000) {        _insights.add(InsightItem(
           icon: Icons.account_balance_rounded,
-          title: 'Platform balance: ₹${Helpers.formatNumber(balance.toInt())}',
+          title: 'Platform balance: ${Helpers.formatNumber(balance.toInt())} pts',
           subtitle: 'Revenue is healthy',
           color: const Color(0xFF06B6D4),
         ));
@@ -658,7 +658,7 @@ notifyListeners();
     try {
       final description = notes.isNotEmpty
           ? notes
-          : '₹${amount.toStringAsFixed(2)} first-project referral bonus for $referredUserName';
+          : '${amount.toStringAsFixed(2)} pts first-project referral bonus for $referredUserName';
 
       // 1. Credit the referrer's wallet
       await _adminRepository.creditUserWallet(
@@ -683,7 +683,7 @@ notifyListeners();
         );
       }
 
-      _successMessage = 'Credited ₹${amount.toStringAsFixed(2)} referral bonus';
+      _successMessage = 'Credited ${amount.toStringAsFixed(2)} pts referral bonus';
       notifyListeners();
       return true;
     } catch (e) {
@@ -715,7 +715,7 @@ notifyListeners();
       try {
         final description = notes.isNotEmpty
             ? notes
-            : 'Bulk first-project referral bonus (₹${amount.toStringAsFixed(2)})';
+            : 'Bulk first-project referral bonus (${amount.toStringAsFixed(2)} pts)';
 
         // Credit the referrer's wallet
         await _adminRepository.creditUserWallet(

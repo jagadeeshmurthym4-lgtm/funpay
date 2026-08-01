@@ -291,7 +291,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: TextField(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Min ₹',
+                    labelText: 'Min pts',
                     isDense: true,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -310,7 +310,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: TextField(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'Max ₹',
+                    labelText: 'Max pts',
                     isDense: true,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),

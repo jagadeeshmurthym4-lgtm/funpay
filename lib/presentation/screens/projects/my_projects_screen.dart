@@ -449,7 +449,7 @@ class _MyProjectsScreenState extends State<MyProjectsScreen>
                 Row(
                   children: [
                     Text(
-                      '₹${participation.rewardAmount.toStringAsFixed(2)}',
+                      '${participation.rewardAmount.toStringAsFixed(2)} pts',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,

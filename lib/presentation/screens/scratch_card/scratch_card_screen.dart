@@ -349,7 +349,7 @@ class _ScratchCardScreenState extends State<ScratchCardScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Win up to ₹7!',
+                  'Win up to 7 pts!',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.7),
                     fontSize: 12,
@@ -401,7 +401,7 @@ class _ScratchCardScreenState extends State<ScratchCardScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            '₹${_lastAmount.toStringAsFixed(0)}',
+            '${_lastAmount.toStringAsFixed(0)} pts',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 36,
@@ -780,7 +780,7 @@ class _ScratchCardScreenState extends State<ScratchCardScreen>
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  '₹${_lastAmount.toStringAsFixed(0)}',
+                                  '${_lastAmount.toStringAsFixed(0)} pts',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 34,

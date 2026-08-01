@@ -32,7 +32,7 @@ class OfferModel {
       title: data['title'] as String? ?? '',
       subtitle: data['subtitle'] as String? ?? '',
       iconName: data['iconName'] as String? ?? 'stars',
-      reward: data['reward'] as String? ?? '₹0',
+      reward: data['reward'] as String? ?? '0 pts',
       colorValue: data['colorValue'] as int? ?? 0xFF4ADE80,
       isActive: data['isActive'] as bool? ?? true,
       sortOrder: data['sortOrder'] as int? ?? 0,

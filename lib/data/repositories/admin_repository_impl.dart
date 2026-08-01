@@ -417,7 +417,7 @@ class AdminRepositoryImpl implements AdminRepository {
     try {
       await _broadcastNotification(
         title: '🆕 New Task Available',
-        message: '"$taskTitle" is now live! Complete it to earn ₹${rewardAmount.toStringAsFixed(0)} reward.',
+        message: '"$taskTitle" is now live! Complete it to earn ${rewardAmount.toStringAsFixed(0)} pts reward.',
         type: NotificationType.announcement,
       );
     } catch (e) {

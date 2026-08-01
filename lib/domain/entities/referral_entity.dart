@@ -10,11 +10,11 @@ class ReferralEntity {
   final DateTime createdAt;
 
   // ─── New referral system fields ──────────────────────────
-  /// Whether the ₹7 first-approved-project bonus has been rewarded.
+  /// Whether the 7 pts first-approved-project bonus has been rewarded.
   final bool firstProjectRewarded;
-  /// The project ID of the first approved project that triggered the ₹7 bonus.
+  /// The project ID of the first approved project that triggered the 7 pts bonus.
   final String? firstProjectId;
-  /// When the ₹7 first-project bonus was rewarded.
+  /// When the 7 pts first-project bonus was rewarded.
   final DateTime? firstProjectRewardDate;
   /// Lifetime 5% commission earned from this referred user's approved projects.
   final double lifetimeProjectCommission;
@@ -23,7 +23,7 @@ class ReferralEntity {
   /// How many approved projects the referred user has completed.
   final int approvedProjectCount;
 
-  /// Whether the ₹10 sign-up bonus has been credited to the referrer.
+  /// Whether the 10 pts sign-up bonus has been credited to the referrer.
   /// Used as a guard flag to prevent double-credit if the server-side
   /// `onReferralCreated` Cloud Function is deployed later.
   final bool signupBonusCredited;

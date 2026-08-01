@@ -123,7 +123,7 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('₹',
+                          const Text('pts',
                               style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w600,
@@ -176,7 +176,7 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                     Expanded(
                       child: PremiumStatCard(
                         icon: Icons.arrow_upward_outlined,
-                        label: 'Total Withdrawn',
+                        label: 'Total Redeemed',
                         value: Helpers.formatCurrency(
                             wallet?.totalWithdrawn ?? 0.0),
                         color: AppTheme.accentOrange,
@@ -205,8 +205,8 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () =>
                         Navigator.pushNamed(context, AppRouter.withdrawals),
-                    icon: const Icon(Icons.payments_outlined, size: 22),
-                    label: const Text('Withdraw',
+                    icon: const Icon(Icons.redeem_rounded, size: 22),
+                    label: const Text('Redeem Points',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -452,7 +452,7 @@ class _TransactionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                    '${isCredit ? '+' : '-'}₹${txn.amount.toStringAsFixed(2)}',
+                    '${isCredit ? '+' : '-'}${txn.amount.toStringAsFixed(2)} pts',
                     style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
@@ -476,7 +476,7 @@ class _TransactionCard extends StatelessWidget {
       case TransactionSource.referral:
         return 'Referral Bonus';
       case TransactionSource.withdrawal:
-        return 'Withdrawal';
+        return 'Redemption';
       case TransactionSource.bonus:
         return 'Bonus';
       case TransactionSource.adminAdjustment:

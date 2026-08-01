@@ -505,7 +505,7 @@ class PremiumStatCard extends StatelessWidget {
           const SizedBox(height: 12),
           AnimatedCounter(
             value: double.tryParse(value.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0,
-            prefix: value.startsWith('₹') ? '₹' : '',
+            prefix: value.startsWith('pts') ? 'pts' : '',
             style: theme.textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: color,

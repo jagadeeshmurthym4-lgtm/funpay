@@ -215,7 +215,7 @@ class _AnalyticsTab extends StatelessWidget {
               Expanded(
                   child: _AnalyticCard(
                       label: 'Rewards Paid',
-                      value: '₹${analytics.totalRewardsPaid.toStringAsFixed(0)}',
+                      value: '${analytics.totalRewardsPaid.toStringAsFixed(0)} pts',
                       icon: Icons.monetization_on_outlined,
                       color: const Color(0xFF4ADE80),
                       isDark: isDark)),
@@ -859,8 +859,8 @@ class _ManageProjectsTabState extends State<_ManageProjectsTab> {
                     controller: _rewardCtrl,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                        labelText: 'Reward (₹) *',
-                        prefixText: '₹ ',
+                        labelText: 'Reward (pts) *',
+                        prefixText: 'pts ',
                         border: OutlineInputBorder(),
                         isDense: true))),
             const SizedBox(width: 8),
@@ -1284,7 +1284,7 @@ class _ProjectAdminCard extends StatelessWidget {
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
                     Text(
-                        '₹${project.rewardAmount.toStringAsFixed(0)} · ${project.projectType.label} · ${project.currentParticipants}/${project.maxParticipants}',
+                        '${project.rewardAmount.toStringAsFixed(0)} pts · ${project.projectType.label} · ${project.currentParticipants}/${project.maxParticipants}',
                         style: TextStyle(
                             fontSize: 11,
                             color: theme.colorScheme.onSurfaceVariant)),
@@ -1559,7 +1559,7 @@ class _SubmissionReviewCard extends StatelessWidget {
                         style: theme.textTheme.bodyMedium
                             ?.copyWith(fontWeight: FontWeight.w600)),
                     Text(
-                        'by ${submission.userName} · ₹${submission.rewardAmount.toStringAsFixed(2)}',
+                        'by ${submission.userName} · ${submission.rewardAmount.toStringAsFixed(2)} pts',
                         style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant)),
                   ],
@@ -1899,7 +1899,7 @@ class _SubmissionReviewCard extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Approve & Credit Reward'),
         content: Text(
-            'Approve ${submission.userName}\'s submission for ${submission.projectTitle} and credit ₹${submission.rewardAmount.toStringAsFixed(2)}?'),
+            'Approve ${submission.userName}\'s submission for ${submission.projectTitle} and credit ${submission.rewardAmount.toStringAsFixed(2)} pts?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
