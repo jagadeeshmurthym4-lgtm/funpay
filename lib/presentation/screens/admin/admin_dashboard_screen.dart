@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cashspark/core/utils/helpers.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
+import 'package:cashspark/domain/entities/referral_entity.dart';
 import 'package:cashspark/domain/entities/user_entity.dart';
 import 'package:cashspark/domain/entities/withdrawal_entity.dart';
 import 'package:cashspark/presentation/providers/admin_provider.dart';
@@ -8,10 +10,12 @@ import 'package:cashspark/presentation/screens/admin/admin_affiliate_projects_ta
 import 'package:cashspark/presentation/screens/admin/admin_coupons_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_referral_levels_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_streak_multiplier_tab.dart';
+import 'package:cashspark/presentation/screens/admin/admin_support_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_tabs.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -27,7 +31,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 13, vsync: this);
+    _tabController = TabController(length: 15, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
   }
 
@@ -35,6 +39,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final admin = context.read<AdminProvider>();
     admin.loadDashboard();
     admin.loadUsers();
+    admin.loadReferrals();
     final withdrawal = context.read<WithdrawalProvider>();
     withdrawal.initializeAdmin();
   }
@@ -48,11 +53,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final admin = context.watch<AdminProvider>();
 
     return Scaffold(
       appBar: PremiumAppBar(
         title: 'Admin Panel',
         onBack: () => Navigator.pop(context),
+        actions: [
+          // System health indicator (live dot)
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: Tooltip(
+              message: 'System ${admin.systemOnline ? "Online" : "Offline"} · ${admin.responseTime.toStringAsFixed(0)}ms response · ${admin.errorRate.toStringAsFixed(1)}% error rate',
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: admin.systemOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (admin.systemOnline ? const Color(0xFF22C55E) : const Color(0xFFEF4444)).withValues(alpha: 0.6),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Dark/Light theme toggle button
+          IconButton(
+            icon: Icon(
+              admin.useDarkTheme ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              size: 20,
+            ),
+            tooltip: admin.useDarkTheme ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+            onPressed: admin.toggleTheme,
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(
@@ -85,6 +124,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Tab(text: 'Projects', icon: Icon(Icons.folder_outlined, size: 18)),
                 Tab(text: 'Referral Lvls', icon: Icon(Icons.emoji_events_outlined, size: 18)),
                 Tab(text: 'Streak Mult', icon: Icon(Icons.trending_up_rounded, size: 18)),
+                Tab(text: 'Referrals', icon: Icon(Icons.share_outlined, size: 18)),
+                Tab(text: 'Support', icon: Icon(Icons.support_agent_outlined, size: 18)),
               ],
             ),
           ),
@@ -121,6 +162,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 AdminAffiliateProjectsTab(),
                 const AdminReferralLevelsTab(),
                 const AdminStreakMultiplierTab(),
+                _ReferralsTab(admin: admin, theme: theme),
+                AdminSupportTab(admin: admin, theme: theme),
               ],
             );
           },
@@ -131,60 +174,238 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 }
 
 // ============================================================
-// DASHBOARD TAB
+// DASHBOARD TAB — Advanced Next-Gen Design
 // ============================================================
-class _DashboardTab extends StatelessWidget {
+class _DashboardTab extends StatefulWidget {
   final AdminProvider admin;
   final ThemeData theme;
 
   const _DashboardTab({required this.admin, required this.theme});
 
   @override
+  State<_DashboardTab> createState() => _DashboardTabState();
+}
+
+class _DashboardTabState extends State<_DashboardTab>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic);
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (admin.isLoading) {
+    final admin = widget.admin;
+    final theme = widget.theme;
+
+    if (admin.isLoading && admin.totalUsers == 0) {
       return const Center(child: PremiumLoader());
     }
 
     return RefreshIndicator(
-      onRefresh: () => admin.loadDashboard(),
+      onRefresh: () async {
+        await admin.loadDashboard();
+        _animController.reset();
+        _animController.forward();
+      },
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          PremiumGlass(
-            padding: const EdgeInsets.all(20),
+          // ── Welcome Header ──────────────────────────────
+          FadeTransition(
+            opacity: _fadeAnim,
+            child: PremiumGlass(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 22),
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Command Center',
+                              style: theme.textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                          Text(admin.adminProfile?.fullName ?? 'Admin',
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                      const Spacer(),
+                      // Last updated timestamp
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Icon(Icons.cloud_done_rounded, size: 18,
+                              color: const Color(0xFF22C55E)),
+                          Text('Live',
+                              style: TextStyle(fontSize: 10,
+                                  color: const Color(0xFF22C55E),
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── AI Insight Cards ────────────────────────────
+          if (admin.insights.isNotEmpty)
+            _AnimatedSection(
+              animController: _animController,
+              delay: 0.1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.auto_awesome_rounded, size: 16,
+                          color: const Color(0xFF8B5CF6)),
+                      const SizedBox(width: 6),
+                      Text('AI Insights',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF8B5CF6))),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ...admin.insights.map((insight) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: PremiumGlass(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: insight.color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(insight.icon, size: 18, color: insight.color),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(insight.title,
+                                    style: const TextStyle(
+                                        fontSize: 13, fontWeight: FontWeight.w600)),
+                                Text(insight.subtitle,
+                                    style: TextStyle(fontSize: 11,
+                                        color: theme.colorScheme.onSurfaceVariant)),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.chevron_right, size: 16,
+                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                        ],
+                      ),
+                    ),
+                  )),
+                ],
+              ),
+            ),
+
+          if (admin.insights.isNotEmpty) const SizedBox(height: 16),
+
+          // ── KPI Sparkline Cards ─────────────────────────
+          _AnimatedSection(
+            animController: _animController,
+            delay: 0.2,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [theme.colorScheme.primary, theme.colorScheme.tertiary],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
+                    Expanded(
+                      child: _SparklineCard(
+                        label: 'Total Users',
+                        value: Helpers.formatNumber(admin.totalUsers),
+                        icon: Icons.people_outlined,
+                        color: theme.colorScheme.primary,
+                        theme: theme,
+                        sparkData: admin.dailyUserGrowth,
+                        trend: admin.dailyUserGrowth.length >= 2
+                            ? admin.dailyUserGrowth.last > admin.dailyUserGrowth.first
+                            : null,
                       ),
-                      child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 22),
                     ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Admin Dashboard',
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold)),
-                        Text(admin.adminProfile?.fullName ?? 'Admin',
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                      ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _SparklineCard(
+                        label: 'Active (30d)',
+                        value: Helpers.formatNumber(admin.activeUsers),
+                        icon: Icons.person_pin_outlined,
+                        color: theme.colorScheme.tertiary,
+                        theme: theme,
+                        sparkData: admin.dailyUserGrowth,
+                        trend: admin.activeUsers > 0 ? true : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _SparklineCard(
+                        label: 'Revenue',
+                        value: Helpers.formatCurrency(admin.totalEarnings),
+                        icon: Icons.trending_up_outlined,
+                        color: const Color(0xFF22C55E),
+                        theme: theme,
+                        sparkData: admin.dailyUserGrowth,
+                        trend: true,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _SparklineCard(
+                        label: 'Pending W/D',
+                        value: Helpers.formatNumber(admin.pendingWithdrawals),
+                        icon: Icons.hourglass_empty_outlined,
+                        color: const Color(0xFFF59E0B),
+                        theme: theme,
+                        sparkData: admin.dailyUserGrowth,
+                        trend: admin.pendingWithdrawals > 0 ? false : null,
+                      ),
                     ),
                   ],
                 ),
@@ -193,212 +414,452 @@ class _DashboardTab extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Stats Grid
-          Row(
-            children: [
-              Expanded(child: _StatCard(
-                label: 'Total Users',
-                value: Helpers.formatNumber(admin.totalUsers),
-                icon: Icons.people_outlined,
-                color: theme.colorScheme.primary,
-                theme: theme, chart: null,
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(
-                label: 'Active (30d)',
-                value: Helpers.formatNumber(admin.activeUsers),
-                icon: Icons.person_pin_outlined,
-                color: theme.colorScheme.tertiary,
-                theme: theme, chart: null,
-              )),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _StatCard(
-                label: 'Total Earnings',
-                value: Helpers.formatCurrency(admin.totalEarnings),
-                icon: Icons.trending_up_outlined,
-                color: Colors.green,
-                theme: theme, chart: null,
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(
-                label: 'Total Withdrawn',
-                value: Helpers.formatCurrency(admin.totalWithdrawn),
-                icon: Icons.logout_outlined,
-                color: theme.colorScheme.error,
-                theme: theme, chart: null,
-              )),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: _StatCard(
-                label: 'Pending W/D',
-                value: Helpers.formatNumber(admin.pendingWithdrawals),
-                icon: Icons.hourglass_empty_outlined,
-                color: Colors.orange,
-                theme: theme, chart: null,
-              )),
-              const SizedBox(width: 12),
-              Expanded(child: _StatCard(
-                label: 'Referrals',
-                value: Helpers.formatNumber(admin.totalReferrals),
-                icon: Icons.share_outlined,
-                color: theme.colorScheme.secondary,
-                theme: theme, chart: null,
-              )),
-            ],
-          ),
-
-          const SizedBox(height: 24),
-
-          // Revenue Card
-          PremiumCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.account_balance_outlined, size: 18, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text('Revenue Overview',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _RevenueRow(
-                  label: 'Total Earnings',
-                  value: Helpers.formatCurrency(admin.revenueStats['totalEarnings'] ?? 0),
-                  color: Colors.green,
-                  theme: theme,
-                ),
-                const SizedBox(height: 8),
-                _RevenueRow(
-                  label: 'Total Withdrawn',
-                  value: Helpers.formatCurrency(admin.revenueStats['totalWithdrawn'] ?? 0),
-                  color: theme.colorScheme.error,
-                  theme: theme,
-                ),
-                const Divider(height: 24),
-                _RevenueRow(
-                  label: 'Platform Balance',
-                  value: Helpers.formatCurrency(admin.revenueStats['remainingBalance'] ?? 0),
-                  color: theme.colorScheme.primary,
-                  theme: theme,
-                  bold: true,
-                ),
-              ],
+          // ── Quick Actions Grid ───────────────────────────
+          _AnimatedSection(
+            animController: _animController,
+            delay: 0.3,
+            child: PremiumGlass(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.flash_on_rounded, size: 16, color: const Color(0xFFF59E0B)),
+                      const SizedBox(width: 6),
+                      Text('Quick Actions',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(child: _ActionTile(
+                        icon: Icons.people_outlined,
+                        label: 'Refresh Users',
+                        color: theme.colorScheme.primary,
+                        onTap: admin.loadUsers,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _ActionTile(
+                        icon: Icons.refresh_rounded,
+                        label: 'Reload Dashboard',
+                        color: const Color(0xFF06B6D4),
+                        onTap: () {
+                          admin.loadDashboard();
+                          _animController.reset();
+                          _animController.forward();
+                        },
+                      )),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(child: _ActionTile(
+                        icon: Icons.file_copy_rounded,
+                        label: 'Export Users CSV',
+                        color: const Color(0xFF22C55E),
+                        onTap: admin.copyUsersToClipboard,
+                      )),
+                      const SizedBox(width: 8),
+                      Expanded(child: _ActionTile(
+                        icon: Icons.notifications_outlined,
+                        label: 'Send Announcement',
+                        color: const Color(0xFF8B5CF6),
+                        onTap: () {
+                          // Navigate to Settings tab
+                        },
+                      )),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
+          const SizedBox(height: 16),
 
-          const SizedBox(height: 24),
-
-          // Daily Growth Card
-          PremiumCard(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          // ── Revenue & System Health ──────────────────────
+          _AnimatedSection(
+            animController: _animController,
+            delay: 0.4,
+            child: Row(
               children: [
-                Row(
-                  children: [
-                    Icon(Icons.trending_up_rounded, size: 18, color: theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text('Daily User Growth (7 days)',
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (admin.dailyUserGrowth.isEmpty)
-                  Text('No data available',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant))
-                else
-                  SizedBox(
-                    height: 120,
-                    child: CustomPaint(
-                      size: const Size(double.infinity, 120),
-                      painter: _BarChartPainter(
-                        data: admin.dailyUserGrowth,
-                        barColor: theme.colorScheme.primary,
-                      ),
+                Expanded(
+                  flex: 3,
+                  child: PremiumGlass(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_outlined, size: 16,
+                                color: theme.colorScheme.primary),
+                            const SizedBox(width: 6),
+                            Text('Revenue',
+                                style: theme.textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        _MiniMetric(
+                          label: 'Earnings',
+                          value: Helpers.formatCurrency(admin.revenueStats['totalEarnings'] ?? 0),
+                          color: const Color(0xFF22C55E),
+                          theme: theme,
+                        ),
+                        const SizedBox(height: 6),
+                        _MiniMetric(
+                          label: 'Withdrawn',
+                          value: Helpers.formatCurrency(admin.revenueStats['totalWithdrawn'] ?? 0),
+                          color: const Color(0xFFEF4444),
+                          theme: theme,
+                        ),
+                        const Divider(height: 16),
+                        _MiniMetric(
+                          label: 'Platform Balance',
+                          value: Helpers.formatCurrency(admin.revenueStats['remainingBalance'] ?? 0),
+                          color: theme.colorScheme.primary,
+                          theme: theme,
+                          bold: true,
+                        ),
+                      ],
                     ),
                   ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: PremiumGlass(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.monitor_heart_rounded, size: 16,
+                                color: const Color(0xFF22C55E)),
+                            const SizedBox(width: 6),
+                            Text('System',
+                                style: theme.textTheme.titleSmall
+                                    ?.copyWith(fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _HealthRow(
+                          icon: Icons.check_circle_rounded,
+                          label: 'Status',
+                          value: 'Online',
+                          valueColor: const Color(0xFF22C55E),
+                          theme: theme,
+                        ),
+                        const SizedBox(height: 6),
+                        _HealthRow(
+                          icon: Icons.speed_rounded,
+                          label: 'Response',
+                          value: '${admin.responseTime.toStringAsFixed(0)}ms',
+                          valueColor: admin.responseTime < 100
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFF59E0B),
+                          theme: theme,
+                        ),
+                        const SizedBox(height: 6),
+                        _HealthRow(
+                          icon: Icons.error_outline_rounded,
+                          label: 'Errors',
+                          value: '${admin.errorRate.toStringAsFixed(1)}%',
+                          valueColor: admin.errorRate < 1
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFEF4444),
+                          theme: theme,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 16),
+
+          // ── User Growth Trend ────────────────────────────
+          _AnimatedSection(
+            animController: _animController,
+            delay: 0.5,
+            child: PremiumGlass(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.trending_up_rounded, size: 16, color: theme.colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text('User Growth (7 days)',
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      Text('${admin.totalUsers} total',
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  if (admin.dailyUserGrowth.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 30),
+                      child: Center(
+                        child: Text('No growth data yet',
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      height: 80,
+                      child: CustomPaint(
+                        size: const Size(double.infinity, 80),
+                        painter: _SparklinePainter(
+                          data: admin.dailyUserGrowth,
+                          lineColor: theme.colorScheme.primary,
+                          fillColor: theme.colorScheme.primary.withValues(alpha: 0.08),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
 }
 
-class _StatCard extends StatelessWidget {
+/// A section that fades in with a delay.
+class _AnimatedSection extends StatelessWidget {
+  final AnimationController animController;
+  final double delay;
+  final Widget child;
+
+  const _AnimatedSection({
+    required this.animController,
+    required this.delay,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animController,
+        curve: Interval(delay, 1.0, curve: Curves.easeOutCubic),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// KPI card with inline sparkline chart.
+class _SparklineCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
   final Color color;
   final ThemeData theme;
-  final Widget? chart;
+  final List<int> sparkData;
+  final bool? trend; // true = up, false = down, null = neutral
 
-  const _StatCard({
+  const _SparklineCard({
     required this.label,
     required this.value,
     required this.icon,
     required this.color,
     required this.theme,
-    required this.chart,
+    required this.sparkData,
+    this.trend,
   });
 
   @override
   Widget build(BuildContext context) {
     return PremiumGlass(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 16),
               ),
               const Spacer(),
-              Icon(Icons.trending_up, size: 16, color: color.withValues(alpha: 0.5)),
+              if (trend != null)
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  child: Icon(
+                    trend! ? Icons.trending_up_rounded : Icons.trending_down_rounded,
+                    size: 14,
+                    color: trend! ? const Color(0xFF22C55E) : const Color(0xFFEF4444),
+                  ),
+                ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(value,
-              style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold, color: color)),
-          const SizedBox(height: 4),
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold, color: color, fontSize: 18)),
+          const SizedBox(height: 2),
           Text(label,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          if (sparkData.length >= 2) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 28,
+              child: CustomPaint(
+                size: const Size(double.infinity, 28),
+                painter: _SparklinePainter(
+                  data: sparkData,
+                  lineColor: color,
+                  fillColor: color.withValues(alpha: 0.06),
+                  strokeWidth: 1.5,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-class _RevenueRow extends StatelessWidget {
+/// Mini sparkline area chart painter.
+class _SparklinePainter extends CustomPainter {
+  final List<int> data;
+  final Color lineColor;
+  final Color fillColor;
+  final double strokeWidth;
+
+  _SparklinePainter({
+    required this.data,
+    required this.lineColor,
+    required this.fillColor,
+    this.strokeWidth = 2,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
+
+    final maxVal = data.reduce((a, b) => a > b ? a : b).toDouble();
+    if (maxVal == 0) return;
+
+    final path = Path();
+    final stepX = size.width / (data.length - 1);
+
+    for (int i = 0; i < data.length; i++) {
+      final x = i * stepX;
+      final y = size.height - (data[i] / maxVal) * size.height;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    // Draw fill
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [fillColor, fillColor.withValues(alpha: 0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final fillPath = Path.from(path);
+    fillPath.lineTo(size.width, size.height);
+    fillPath.lineTo(0, size.height);
+    fillPath.close();
+    canvas.drawPath(fillPath, fillPaint);
+
+    // Draw line
+    final linePaint = Paint()
+      ..color = lineColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawPath(path, linePaint);
+
+    // Draw end dot
+    final lastIdx = data.length - 1;
+    canvas.drawCircle(
+      Offset(lastIdx * stepX, size.height - (data[lastIdx] / maxVal) * size.height),
+      3,
+      Paint()..color = lineColor,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+/// Quick action tile button.
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.15)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: color),
+                textAlign: TextAlign.center,
+                maxLines: 1),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Mini metric row for revenue card.
+class _MiniMetric extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
   final ThemeData theme;
   final bool bold;
 
-  const _RevenueRow({
+  const _MiniMetric({
     required this.label,
     required this.value,
     required this.color,
@@ -410,58 +871,58 @@ class _RevenueRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(label,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ),
-        const SizedBox(width: 8),
-        Text(label, style: theme.textTheme.bodyMedium
-            ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const Spacer(),
-        Text(value, style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: bold ? FontWeight.bold : FontWeight.w600, color: color)),
+        Text(value,
+            style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+                color: color)),
       ],
     );
   }
 }
 
-class _BarChartPainter extends CustomPainter {
-  final List<int> data;
-  final Color barColor;
+/// System health indicator row.
+class _HealthRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color valueColor;
+  final ThemeData theme;
 
-  _BarChartPainter({required this.data, required this.barColor});
+  const _HealthRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.valueColor,
+    required this.theme,
+  });
 
   @override
-  void paint(Canvas canvas, Size size) {
-    if (data.isEmpty) return;
-
-    final maxVal = data.reduce((a, b) => a > b ? a : b).toDouble();
-    if (maxVal == 0) return;
-
-    final barWidth = size.width / (data.length * 2);
-    final paint = Paint()..color = barColor;
-
-    for (int i = 0; i < data.length; i++) {
-      final barHeight = (data[i] / maxVal) * (size.height - 10);
-      final x = i * barWidth * 2 + barWidth / 2;
-      canvas.drawRRect(
-        RRect.fromRectAndCorners(
-          Rect.fromLTWH(x, size.height - barHeight, barWidth, barHeight),
-          topLeft: const Radius.circular(4),
-          topRight: const Radius.circular(4),
-        ),
-        paint,
-      );
-    }
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: valueColor),
+        const SizedBox(width: 6),
+        Text(label,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontSize: 10)),
+        const Spacer(),
+        Text(value,
+            style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600, color: valueColor, fontSize: 10)),
+      ],
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
 // ============================================================
-// USERS TAB
+// USERS TAB — Advanced
 // ============================================================
 class _UsersTab extends StatefulWidget {
   final AdminProvider admin;
@@ -490,56 +951,156 @@ class _UsersTabState extends State<_UsersTab> {
 
     return Column(
       children: [
+        // Search + Export bar
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
           child: PremiumGlass(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search users by name, email, or ID',
-                prefixIcon: Icon(Icons.search, color: widget.theme.colorScheme.onSurfaceVariant),
-                border: InputBorder.none,
-                filled: false,
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          widget.admin.searchUsers('');
-                        },
-                      )
-                    : null,
-              ),
-              onChanged: (value) => widget.admin.searchUsers(value),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Search by name, email, or ID...',
+                      prefixIcon: Icon(Icons.search, color: widget.theme.colorScheme.onSurfaceVariant, size: 20),
+                      border: InputBorder.none,
+                      filled: false,
+                      isDense: true,
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                widget.admin.searchUsers('');
+                              },
+                            )
+                          : null,
+                    ),
+                    onChanged: (value) => widget.admin.searchUsers(value),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Export CSV button
+                Tooltip(
+                  message: 'Export users to CSV (copies to clipboard)',
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        widget.admin.copyUsersToClipboard();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(widget.admin.successMessage ?? 'Users copied to clipboard!'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Icon(Icons.file_copy_rounded, size: 20, color: Color(0xFF22C55E)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Refresh button
+                Tooltip(
+                  message: 'Refresh users',
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: widget.theme.colorScheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: InkWell(
+                      onTap: () => widget.admin.loadUsers(),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Icon(Icons.refresh_rounded, size: 20,
+                          color: widget.theme.colorScheme.primary),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
 
+        // Stats bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+          child: Row(
+            children: [
+              _UserStatBadge(
+                label: 'Total',
+                value: '${widget.admin.users.length}',
+                color: widget.theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              _UserStatBadge(
+                label: 'Verified',
+                value: '${widget.admin.users.where((u) => u.isEmailVerified).length}',
+                color: const Color(0xFF22C55E),
+              ),
+              const SizedBox(width: 8),
+              _UserStatBadge(
+                label: 'Active',
+                value: '${widget.admin.users.where((u) => u.isActive).length}',
+                color: const Color(0xFF06B6D4),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
         Expanded(
-          child: widget.admin.isLoading
+          child: widget.admin.isLoading && widget.admin.users.isEmpty
               ? const Center(child: PremiumLoader())
               : displayUsers.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                  ? RefreshIndicator(
+                      onRefresh: () => widget.admin.loadUsers(),
+                      child: ListView(
                         children: [
-                          Icon(Icons.people_outline, size: 48,
-                              color: widget.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
-                          const SizedBox(height: 8),
-                          Text('No users found',
-                              style: widget.theme.textTheme.bodyLarge?.copyWith(
-                                  color: widget.theme.colorScheme.onSurfaceVariant)),
+                          SizedBox(
+                            height: 200,
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.people_outline, size: 48,
+                                      color: widget.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                                  const SizedBox(height: 8),
+                                  Text('No users found',
+                                      style: widget.theme.textTheme.bodyLarge?.copyWith(
+                                          color: widget.theme.colorScheme.onSurfaceVariant)),
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      itemCount: displayUsers.length,
-                      itemBuilder: (context, index) {
-                        final user = displayUsers[index];
-                        return _UserCard(user: user, theme: widget.theme);
-                      },
+                  : RefreshIndicator(
+                      onRefresh: () => widget.admin.loadUsers(),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: displayUsers.length,
+                        itemBuilder: (context, index) {
+                          final user = displayUsers[index];
+                          return _UserCard(
+                            user: user,
+                            theme: widget.theme,
+                            admin: widget.admin,
+                          );
+                        },
+                      ),
                     ),
         ),
       ],
@@ -547,25 +1108,98 @@ class _UsersTabState extends State<_UsersTab> {
   }
 }
 
-class _UserCard extends StatelessWidget {
-  final UserEntity user;
-  final ThemeData theme;
+class _UserStatBadge extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
 
-  const _UserCard({required this.user, required this.theme});
+  const _UserStatBadge({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value,
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(width: 4),
+          Text(label,
+              style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserCard extends StatefulWidget {
+  final UserEntity user;
+  final ThemeData theme;
+  final AdminProvider admin;
+
+  const _UserCard({required this.user, required this.theme, required this.admin});
+
+  @override
+  State<_UserCard> createState() => _UserCardState();
+}
+
+class _UserCardState extends State<_UserCard> {
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.user;
+    final theme = widget.theme;
+
     return PremiumGlass(
       margin: const EdgeInsets.only(bottom: 8),
       padding: EdgeInsets.zero,
       child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.primaryContainer,
-          child: Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
-              style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+        leading: Stack(
+          children: [
+            CircleAvatar(
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?',
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+            ),
+            if (user.isEmailVerified)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF22C55E),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check, size: 10, color: Colors.white),
+                ),
+              ),
+          ],
         ),
-        title: Text(user.fullName,
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(user.fullName,
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            ),
+            if (!user.isActive)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('INACTIVE',
+                    style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
+                        color: const Color(0xFFEF4444))),
+              ),
+          ],
+        ),
         subtitle: Row(
           children: [
             Icon(Icons.email_outlined, size: 12, color: theme.colorScheme.onSurfaceVariant),
@@ -582,20 +1216,53 @@ class _UserCard extends StatelessWidget {
         children: [
           const Divider(),
           const SizedBox(height: 8),
-          _UserDetail(label: 'UID', value: user.uid, theme: theme),
+          _UserDetail('UID', user.uid.length > 20 ? '...${user.uid.substring(user.uid.length - 20)}' : user.uid, theme),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Phone', value: user.phone ?? 'N/A', theme: theme),
+          _UserDetail('Phone', user.phone ?? 'N/A', theme),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Referral Code', value: user.referralCode, theme: theme),
+          _UserDetail('Referral', user.referralCode, theme),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Wallet', value: Helpers.formatCurrency(user.walletBalance), theme: theme),
+          _UserDetail('Wallet', Helpers.formatCurrency(user.walletBalance), theme, valueColor: const Color(0xFF22C55E)),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Earnings', value: Helpers.formatCurrency(user.totalEarnings), theme: theme),
+          _UserDetail('Earnings', Helpers.formatCurrency(user.totalEarnings), theme),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Joined', value: Helpers.formatDateTime(user.createdAt), theme: theme),
+          _UserDetail('Withdrawn', Helpers.formatCurrency(user.totalWithdrawn), theme, valueColor: const Color(0xFFEF4444)),
           const SizedBox(height: 4),
-          _UserDetail(label: 'Verified', value: user.isEmailVerified ? 'Yes ✓' : 'No', theme: theme,
-              valueColor: user.isEmailVerified ? Colors.green : null),
+          _UserDetail('Joined', Helpers.formatDateTime(user.createdAt), theme),
+          const SizedBox(height: 10),
+          // Inline toggle for user status
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: user.isEmailVerified
+                      ? const Color(0xFF22C55E).withValues(alpha: 0.08)
+                      : const Color(0xFFF59E0B).withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      user.isEmailVerified ? Icons.verified_rounded : Icons.warning_amber_rounded,
+                      size: 12,
+                      color: user.isEmailVerified ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      user.isEmailVerified ? 'Verified' : 'Unverified',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: user.isEmailVerified ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -608,7 +1275,7 @@ class _UserDetail extends StatelessWidget {
   final ThemeData theme;
   final Color? valueColor;
 
-  const _UserDetail({required this.label, required this.value, required this.theme, this.valueColor});
+  const _UserDetail(this.label, this.value, this.theme, {this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -616,7 +1283,7 @@ class _UserDetail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: 100,
+          width: 90,
           child: Text(label, style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant)),
         ),
@@ -649,6 +1316,8 @@ class _WithdrawalsTab extends StatefulWidget {
 
 class _WithdrawalsTabState extends State<_WithdrawalsTab> {
   WithdrawalStatus? _filterStatus;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -659,13 +1328,74 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
   }
 
   @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<WithdrawalEntity> _filterWithdrawals(List<WithdrawalEntity> withdrawals) {
+    if (_searchQuery.isEmpty) return withdrawals;
+    final query = _searchQuery.toLowerCase();
+    return withdrawals.where((w) {
+      final user = _getUser(w.userId);
+      return w.withdrawalId.toLowerCase().contains(query) ||
+          w.accountDetails.toLowerCase().contains(query) ||
+          w.amount.toString().contains(query) ||
+          (w.userName?.toLowerCase().contains(query) ?? false) ||
+          (w.userEmail?.toLowerCase().contains(query) ?? false) ||
+          (w.userPhone?.contains(query) ?? false) ||
+          (user?.fullName.toLowerCase().contains(query) ?? false) ||
+          (user?.email.toLowerCase().contains(query) ?? false) ||
+          (user?.phone?.contains(query) ?? false) ||
+          (w.transactionId?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
+
+  UserEntity? _getUser(String userId) {
+    try {
+      return widget.admin.users.firstWhere((u) => u.uid == userId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final withdrawals = widget.withdrawal.allWithdrawals;
+    var withdrawals = widget.withdrawal.allWithdrawals;
+    withdrawals = _filterWithdrawals(withdrawals);
 
     return Column(
       children: [
+        // Search Bar
         Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: PremiumGlass(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name, email, UPI ID, or amount...',
+                prefixIcon: Icon(Icons.search, color: widget.theme.colorScheme.onSurfaceVariant),
+                border: InputBorder.none,
+                filled: false,
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (value) => setState(() => _searchQuery = value),
+            ),
+          ),
+        ),
+
+        // Filter Chips
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -728,6 +1458,8 @@ class _WithdrawalsTabState extends State<_WithdrawalsTab> {
             ),
           ),
         ),
+
+        const SizedBox(height: 8),
 
         Expanded(
           child: widget.withdrawal.isLoading
@@ -822,6 +1554,11 @@ class _AdminWithdrawalCard extends StatelessWidget {
     final isFailed = withdrawal.status == WithdrawalStatus.rejected &&
         withdrawal.adminRemarks?.contains('Auto-payout failed') == true;
 
+    // Risk assessment based on amount
+    final riskLevel = _computeRiskLevel(withdrawal.amount);
+    final hoursSinceRequest = DateTime.now().difference(withdrawal.requestedAt).inHours;
+    final isUrgent = isPending && hoursSinceRequest > 48;
+
     return PremiumGlass(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -830,13 +1567,36 @@ class _AdminWithdrawalCard extends StatelessWidget {
         onTap: isPending || isFailed ? () => _showAdminActionDialog(context) : null,
         child: Row(
           children: [
+            // Icon with risk ring
             Container(
               width: 42, height: 42,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: statusColor.withValues(alpha: 0.1),
               ),
-              child: Icon(_methodIcon(withdrawal.method), color: statusColor, size: 20),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(Icons.qr_code_scanner_rounded, color: statusColor, size: 20),
+                  if (isPending && riskLevel != null)
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: Container(
+                        width: 10, height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: riskLevel == _RiskLevel.high
+                              ? const Color(0xFFEF4444)
+                              : riskLevel == _RiskLevel.medium
+                                  ? const Color(0xFFF59E0B)
+                                  : const Color(0xFF22C55E),
+                          border: Border.all(color: theme.colorScheme.surface, width: 1.5),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -850,14 +1610,49 @@ class _AdminWithdrawalCard extends StatelessWidget {
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 6),
+                      // Risk badge for high amounts
+                      if (isPending && riskLevel == _RiskLevel.high)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('HIGH',
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
+                                  color: Color(0xFFEF4444))),
+                        )
+                      else if (isPending && riskLevel == _RiskLevel.medium)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('MEDIUM',
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
+                                  color: Color(0xFFF59E0B))),
+                        ),
+                      // Urgency indicator
+                      if (isUrgent)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text('${hoursSinceRequest ~/ 24}d',
+                              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF8B5CF6))),
+                        ),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Text(withdrawal.method.name.toUpperCase(),
-                            style: TextStyle(fontSize: 9, color: theme.colorScheme.onSurfaceVariant)),
+                        child: const Text('UPI QR',
+                            style: TextStyle(fontSize: 9, color: Colors.white)),
                       ),
                     ],
                   ),
@@ -871,11 +1666,23 @@ class _AdminWithdrawalCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  Text(
-                    Helpers.formatDateTime(withdrawal.requestedAt),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        Helpers.formatDateTime(withdrawal.requestedAt),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      if (isUrgent) ...[
+                        const SizedBox(width: 6),
+                        Icon(Icons.access_time_rounded, size: 10,
+                            color: const Color(0xFF8B5CF6)),
+                        Text(' ${hoursSinceRequest}h',
+                            style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600,
+                                color: const Color(0xFF8B5CF6))),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -906,6 +1713,12 @@ class _AdminWithdrawalCard extends StatelessWidget {
     );
   }
 
+  _RiskLevel? _computeRiskLevel(double amount) {
+    if (amount >= 10000) return _RiskLevel.high;
+    if (amount >= 5000) return _RiskLevel.medium;
+    return null;
+  }
+
   Color _statusColor() {
     switch (withdrawal.status) {
       case WithdrawalStatus.pending: return Colors.orange;
@@ -924,27 +1737,9 @@ class _AdminWithdrawalCard extends StatelessWidget {
     }
   }
 
-  IconData _methodIcon(WithdrawalMethod method) {
-    switch (method) {
-      case WithdrawalMethod.upi: return Icons.phone_android_outlined;
-      case WithdrawalMethod.paytm: return Icons.account_balance_wallet_outlined;
-      case WithdrawalMethod.bankTransfer: return Icons.account_balance_outlined;
-    }
-  }
-
-  void _copyToClipboard(String text, BuildContext dialogContext) {
-    Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(dialogContext).showSnackBar(
-      SnackBar(
-        content: const Text('UPI ID copied!'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
   void _showAdminActionDialog(BuildContext context) {
     final remarksController = TextEditingController();
+    final transactionIdController = TextEditingController();
     final user = _getUser();
     final isSubmitting = ValueNotifier<bool>(false);
 
@@ -961,7 +1756,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.payments_outlined, color: theme.colorScheme.primary, size: 22),
+                    Icon(Icons.qr_code_scanner_rounded, color: theme.colorScheme.primary, size: 22),
                     const SizedBox(width: 8),
                     Text('Process Withdrawal',
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
@@ -969,6 +1764,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
 
+                // User Info
                 if (user != null)
                   Container(
                     width: double.infinity,
@@ -1016,6 +1812,15 @@ class _AdminWithdrawalCard extends StatelessWidget {
                             ],
                           ),
                         ],
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
+                            const SizedBox(width: 6),
+                            Text('Wallet: ₹${user.walletBalance.toStringAsFixed(2)}',
+                                style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -1023,12 +1828,24 @@ class _AdminWithdrawalCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 _DialogDetailRow('Amount', '₹${withdrawal.amount.toStringAsFixed(2)}', theme, bold: true),
                 const SizedBox(height: 4),
-                _DialogDetailRow('Method', withdrawal.method.name.toUpperCase(), theme),
+                _DialogDetailRow('UPI ID', withdrawal.accountDetails, theme),
                 const SizedBox(height: 4),
-                _DialogDetailRow('Account', withdrawal.accountDetails, theme),
+                if (withdrawal.userName != null)
+                  _DialogDetailRow('Name', withdrawal.userName!, theme),
+                if (withdrawal.userEmail != null) ...[
+                  const SizedBox(height: 4),
+                  _DialogDetailRow('Email', withdrawal.userEmail!, theme),
+                ],
+                if (withdrawal.userPhone != null) ...[
+                  const SizedBox(height: 4),
+                  _DialogDetailRow('Phone', withdrawal.userPhone!, theme),
+                ],
+                const SizedBox(height: 4),
+                _DialogDetailRow('Wallet Balance', '₹${withdrawal.walletBalanceAtRequest.toStringAsFixed(2)}', theme),
                 const SizedBox(height: 12),
 
-                if (withdrawal.method == WithdrawalMethod.upi)
+                // QR Code Preview
+                if (withdrawal.qrCodeUrl != null)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -1042,44 +1859,118 @@ class _AdminWithdrawalCard extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.payments_outlined, size: 18, color: theme.colorScheme.primary),
+                            Icon(Icons.qr_code_scanner_rounded, size: 18, color: theme.colorScheme.primary),
                             const SizedBox(width: 8),
-                            Text('UPI Payment',
+                            Text('UPI QR Code',
                                 style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: () => _copyToClipboard(withdrawal.accountDetails, ctx),
-                            icon: const Icon(Icons.copy_outlined, size: 16),
-                            label: Text(
-                              'Copy UPI ID: ${withdrawal.accountDetails}',
-                              style: const TextStyle(fontSize: 13),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: theme.colorScheme.primary,
-                              side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.5)),
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => _showQrPreview(context, withdrawal.qrCodeUrl!),
+                            child: Container(
+                              height: 120,
+                              width: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(11),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    CachedNetworkImage(
+                                      imageUrl: withdrawal.qrCodeUrl!,
+                                      fit: BoxFit.contain,
+                                      placeholder: (_, __) => const Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                      errorWidget: (_, __, ___) => Icon(Icons.broken_image_outlined,
+                                          color: theme.colorScheme.error, size: 32),
+                                    ),
+                                    Positioned(
+                                      right: 4,
+                                      bottom: 4,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54,
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Icon(Icons.zoom_in, color: Colors.white, size: 14),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            IconButton.outlined(
+                              onPressed: () => _showQrPreview(context, withdrawal.qrCodeUrl!),
+                              icon: const Icon(Icons.zoom_in_rounded, size: 18),
+                              tooltip: 'Preview & Zoom',
+                              style: IconButton.styleFrom(
+                                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.outlined(
+                              onPressed: () => _downloadQrCode(context, withdrawal.qrCodeUrl!),
+                              icon: const Icon(Icons.download_rounded, size: 18),
+                              tooltip: 'Download QR Code',
+                              style: IconButton.styleFrom(
+                                side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         Text(
-                          'Send ₹${withdrawal.amount.toStringAsFixed(2)} to this UPI ID, then click "Mark as Paid".',
+                          'Preview/zoom or download the QR code. Send payment to this UPI QR, then mark as paid.',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                             fontSize: 11,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
 
                 const SizedBox(height: 12),
+                // Transaction ID field
+                TextField(
+                  controller: transactionIdController,
+                  decoration: InputDecoration(
+                    labelText: 'Transaction / Reference ID',
+                    hintText: 'e.g. TXN123456789',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    isDense: true,
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    prefixIcon: Icon(Icons.tag_rounded, size: 18),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 TextField(
                   controller: remarksController,
                   decoration: InputDecoration(
@@ -1141,9 +2032,11 @@ class _AdminWithdrawalCard extends StatelessWidget {
                         return FilledButton.icon(
                           onPressed: submitting ? null : () async {
                             isSubmitting.value = true;
+                            final txnId = transactionIdController.text.trim();
                             final success = await withdrawalProvider.markAsPaid(
                               withdrawal.withdrawalId,
                               remarks: remarksController.text.isNotEmpty ? remarksController.text : null,
+                              transactionId: txnId.isNotEmpty ? txnId : null,
                             );
                             if (ctx.mounted) {
                               Navigator.pop(ctx);
@@ -1178,6 +2071,129 @@ class _AdminWithdrawalCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showQrPreview(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: InteractiveViewer(
+                      minScale: 0.5,
+                      maxScale: 4.0,
+                      child: CachedNetworkImage(
+                        imageUrl: url,
+                        fit: BoxFit.contain,
+                        width: 300,
+                        height: 300,
+                        placeholder: (_, __) => Container(
+                          height: 300,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Center(child: CircularProgressIndicator()),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          height: 300,
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.broken_image_outlined, size: 48),
+                              Text('Failed to load image'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.tonalIcon(
+                    onPressed: () => _downloadQrCode(context, url),
+                    icon: const Icon(Icons.download_rounded, size: 18),
+                    label: const Text('Download QR Code'),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              right: 4,
+              top: 4,
+              child: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Opens the QR code image URL in the device browser so the admin can
+  /// save/download it.
+  Future<void> _downloadQrCode(BuildContext context, String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Could not open QR code image. Try copying the URL manually.'),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              action: SnackBarAction(
+                label: 'Copy URL',
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: url));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('QR code URL copied to clipboard!'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to open QR code: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -1773,3 +2789,975 @@ class _SettingsField extends StatelessWidget {
 }
 
 
+
+/// Risk level indicators for withdrawal amounts.
+enum _RiskLevel { medium, high }
+
+// ============================================================
+// REFERRALS TAB — Track Referrals & First-Project Completion
+// ============================================================
+class _ReferralsTab extends StatefulWidget {
+  final AdminProvider admin;
+  final ThemeData theme;
+
+  const _ReferralsTab({required this.admin, required this.theme});
+
+  @override
+  State<_ReferralsTab> createState() => _ReferralsTabState();
+}
+
+class _ReferralsTabState extends State<_ReferralsTab> {
+  @override
+  Widget build(BuildContext context) {
+    final admin = widget.admin;
+    final theme = widget.theme;
+
+    // Compute stats
+    final totalReferrals = admin.referrals.length;
+    final completedFirstProject = admin.referrals.where((r) => r.approvedProjectCount > 0).length;
+    final pendingCredit = admin.referrals.where((r) => r.approvedProjectCount > 0 && !r.firstProjectRewarded).length;
+    final totalPaid = admin.referrals.where((r) => r.firstProjectRewarded).length;
+
+    // Group referrals by referrer for display
+    final referrerMap = <String, List<ReferralEntity>>{};
+    for (final r in admin.referrals) {
+      referrerMap.putIfAbsent(r.referrerUserId, () => []).add(r);
+    }
+
+    return Column(
+      children: [
+        // Stats bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _UserStatBadge(
+                  label: 'Total Ref',
+                  value: '$totalReferrals',
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                _UserStatBadge(
+                  label: 'Completed',
+                  value: '$completedFirstProject',
+                  color: const Color(0xFF22C55E),
+                ),
+                const SizedBox(width: 8),
+                _UserStatBadge(
+                  label: 'Pending Credit',
+                  value: '$pendingCredit',
+                  color: const Color(0xFFF59E0B),
+                ),
+                const SizedBox(width: 8),
+                _UserStatBadge(
+                  label: 'Total Paid',
+                  value: '$totalPaid',
+                  color: const Color(0xFF8B5CF6),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Toolbar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${referrerMap.length} referrers · $totalReferrals referrals',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              // Bulk Credit button — only shown when there are pending credits
+              if (pendingCredit > 0) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: () => _showBulkCreditDialog(
+                    context,
+                    admin: admin,
+                    theme: theme,
+                    pendingCount: pendingCredit,
+                    referrals: admin.referrals,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.card_giftcard_rounded, size: 18,
+                        color: const Color(0xFF22C55E)),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 6),
+              InkWell(
+                onTap: () {
+                  admin.loadReferrals();
+                  admin.loadUsers();
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.refresh_rounded, size: 18,
+                      color: theme.colorScheme.primary),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Referral list
+        Expanded(
+          child: admin.isLoading && admin.referrals.isEmpty
+              ? const Center(child: PremiumLoader())
+              : referrerMap.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.share_outlined, size: 48,
+                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
+                          const SizedBox(height: 12),
+                          Text('No referrals found',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        await admin.loadReferrals();
+                        await admin.loadUsers();
+                      },
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        itemCount: referrerMap.length,
+                        itemBuilder: (context, index) {
+                          final referrerId = referrerMap.keys.elementAt(index);
+                          final referredList = referrerMap[referrerId]!;
+                          return _ReferrerCard(
+                            referrerId: referrerId,
+                            referrals: referredList,
+                            users: admin.users,
+                            theme: theme,
+                            admin: admin,
+                          );
+                        },
+                      ),
+                    ),
+        ),
+      ],
+    );
+  }
+}
+
+
+class _ReferrerCard extends StatelessWidget {
+  final String referrerId;
+  final List<ReferralEntity> referrals;
+  final List<UserEntity> users;
+  final ThemeData theme;
+  final AdminProvider admin;
+
+  const _ReferrerCard({
+    required this.referrerId,
+    required this.referrals,
+    required this.users,
+    required this.theme,
+    required this.admin,
+  });
+
+  UserEntity? _findUser(String userId) {
+    try {
+      return users.firstWhere((u) => u.uid == userId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final referrer = _findUser(referrerId);
+    final totalCommission = referrals.fold<double>(0, (sum, r) => sum + r.lifetimeProjectCommission);
+    final projectsCompleted = referrals.where((r) => r.approvedProjectCount > 0).length;
+
+    return PremiumGlass(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Referrer header
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Text(
+                  (referrer?.fullName ?? referrerId[0]).isNotEmpty
+                      ? (referrer?.fullName ?? referrerId)[0].toUpperCase()
+                      : '?',
+                  style: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      referrer?.fullName ?? 'Unknown User',
+                      style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    if (referrer?.email != null)
+                      Text(
+                        referrer!.email,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '₹${totalCommission.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF22C55E),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Stats row
+          Row(
+            children: [
+              _MiniBadge(
+                label: 'Referred',
+                value: '${referrals.length}',
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              _MiniBadge(
+                label: 'Completed',
+                value: '$projectsCompleted',
+                color: const Color(0xFF22C55E),
+              ),
+              const SizedBox(width: 6),
+              _MiniBadge(
+                label: 'Earned',
+                value: '₹${totalCommission.toStringAsFixed(0)}',
+                color: const Color(0xFF8B5CF6),
+              ),
+            ],
+          ),
+
+          const Divider(height: 16),
+
+          // Referred users list
+          ...referrals.map((r) => _ReferredUserTile(
+            referral: r,
+            referredUser: _findUser(r.referredUserId),
+            theme: theme,
+            admin: admin,
+          )),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniBadge extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MiniBadge({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+          const SizedBox(width: 2),
+          Text(label,
+              style: TextStyle(fontSize: 9, color: color, fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReferredUserTile extends StatelessWidget {
+  final ReferralEntity referral;
+  final UserEntity? referredUser;
+  final ThemeData theme;
+  final AdminProvider admin;
+
+  const _ReferredUserTile({
+    required this.referral,
+    required this.referredUser,
+    required this.theme,
+    required this.admin,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCompletedProject = referral.approvedProjectCount > 0;
+    final isRewarded = referral.firstProjectRewarded;
+    final canCredit = hasCompletedProject && !isRewarded;
+    final isCrediting = ValueNotifier<bool>(false);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          // Referred user avatar
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: theme.colorScheme.secondaryContainer,
+            child: Text(
+              (referredUser?.fullName ?? '?')[0].toUpperCase(),
+              style: TextStyle(
+                color: theme.colorScheme.secondary,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  referredUser?.fullName ?? 'Unknown',
+                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                ),
+                Row(
+                  children: [
+                    // First project status chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: hasCompletedProject
+                            ? const Color(0xFF22C55E).withValues(alpha: 0.1)
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasCompletedProject ? Icons.check_circle_rounded : Icons.access_time_rounded,
+                            size: 8,
+                            color: hasCompletedProject ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            'Project: ${hasCompletedProject ? "Done" : "Pending"}',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              color: hasCompletedProject ? const Color(0xFF22C55E) : const Color(0xFFF59E0B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Reward status chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: isRewarded
+                            ? const Color(0xFF8B5CF6).withValues(alpha: 0.1)
+                            : const Color(0xFF6B7280).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isRewarded ? Icons.card_giftcard_rounded : Icons.info_outline_rounded,
+                            size: 8,
+                            color: isRewarded ? const Color(0xFF8B5CF6) : const Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            isRewarded ? 'Bonus: ₹7' : 'Not credited',
+                            style: TextStyle(
+                              fontSize: 8,
+                              fontWeight: FontWeight.w600,
+                              color: isRewarded ? const Color(0xFF8B5CF6) : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Credit button — opens a dialog to customize amount & notes
+          if (canCredit)
+            ValueListenableBuilder<bool>(
+              valueListenable: isCrediting,
+              builder: (context, crediting, _) {
+                return SizedBox(
+                  height: 28,
+                  child: FilledButton.icon(
+                    onPressed: crediting
+                        ? null
+                        : () => _showCreditDialog(
+                              context,
+                              admin: admin,
+                              referral: referral,
+                              referredUserName: referredUser?.fullName ?? 'Referred User',
+                              isCrediting: isCrediting,
+                            ),
+                    icon: crediting
+                        ? const SizedBox(
+                            width: 12, height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
+                          )
+                        : const Icon(Icons.payments_rounded, size: 14),
+                    label: Text(
+                      crediting ? '...' : 'Credit',
+                      style: const TextStyle(fontSize: 10),
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      backgroundColor: const Color(0xFF22C55E),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Shows a dialog to customize the referral credit amount and notes
+/// before committing the credit to the referrer's wallet.
+Future<void> _showCreditDialog(
+  BuildContext context, {
+  required AdminProvider admin,
+  required ReferralEntity referral,
+  required String referredUserName,
+  required ValueNotifier<bool> isCrediting,
+}) async {
+  final theme = Theme.of(context);
+  final amountController = TextEditingController(text: '7');
+  final notesController = TextEditingController(
+    text: 'First-project referral bonus for $referredUserName',
+  );
+  final formKey = GlobalKey<FormState>();
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.card_giftcard_rounded, color: const Color(0xFF8B5CF6), size: 22),
+            const SizedBox(width: 8),
+            Text(
+              'Credit Referral Bonus',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Referred user info
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: theme.colorScheme.secondaryContainer,
+                        child: Text(
+                          referredUserName[0].toUpperCase(),
+                          style: TextStyle(color: theme.colorScheme.secondary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              referredUserName,
+                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            Text(
+                              'Referred user completed their first project',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Amount field
+                TextFormField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Credit Amount (₹)',
+                    prefixText: '₹ ',
+                    prefixStyle: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    hintText: 'Enter amount',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Enter an amount';
+                    final amount = double.tryParse(value);
+                    if (amount == null || amount <= 0) return 'Enter a valid amount';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Notes field
+                TextFormField(
+                  controller: notesController,
+                  maxLines: 2,
+                  maxLength: 200,
+                  decoration: InputDecoration(
+                    labelText: 'Notes / Description',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    hintText: 'Reason for crediting...',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            icon: const Icon(Icons.check_circle_rounded, size: 18),
+            label: const Text('Credit Now'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true) return;
+
+  final amount = double.tryParse(amountController.text) ?? 7.0;
+  final notes = notesController.text.trim();
+
+  isCrediting.value = true;
+  final success = await admin.creditReferralBonus(
+    referralId: referral.referralId,
+    referrerUserId: referral.referrerUserId,
+    referredUserName: referredUserName,
+    amount: amount,
+    notes: notes,
+  );
+  if (context.mounted) {
+    isCrediting.value = false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? '₹${amount.toStringAsFixed(2)} credited to referrer!'
+              : admin.errorMessage ?? 'Failed to credit',
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+/// Shows a dialog to configure and execute bulk credit for all eligible
+/// referral bonuses at once with a progress tracker.
+Future<void> _showBulkCreditDialog(
+  BuildContext context, {
+  required AdminProvider admin,
+  required ThemeData theme,
+  required int pendingCount,
+  required List<ReferralEntity> referrals,
+}) async {
+  final amountController = TextEditingController(text: '7');
+  final notesController = TextEditingController(
+    text: 'Bulk first-project referral bonus',
+  );
+  final formKey = GlobalKey<FormState>();
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.card_giftcard_rounded, color: const Color(0xFF22C55E), size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Bulk Credit ($pendingCount)',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Info banner
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22C55E).withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF22C55E).withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, size: 18, color: const Color(0xFF22C55E)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Will credit $pendingCount referrers whose referred users completed their first project.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Amount field
+                TextFormField(
+                  controller: amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Credit Amount (₹) per Referral',
+                    prefixText: '₹ ',
+                    prefixStyle: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    hintText: 'Enter amount',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Enter an amount';
+                    final amount = double.tryParse(value);
+                    if (amount == null || amount <= 0) return 'Enter a valid amount';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Notes field
+                TextFormField(
+                  controller: notesController,
+                  maxLines: 2,
+                  maxLength: 200,
+                  decoration: InputDecoration(
+                    labelText: 'Notes / Description (applied to all)',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    hintText: 'Reason for bulk crediting...',
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+                Text(
+                  'Total: ₹${(double.tryParse(amountController.text) ?? 7) * pendingCount}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx, true);
+              }
+            },
+            icon: const Icon(Icons.rocket_launch_rounded, size: 18),
+            label: Text('Credit All ($pendingCount)'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (confirmed != true) return;
+
+  final amount = double.tryParse(amountController.text) ?? 7.0;
+  final notes = notesController.text.trim();
+
+  // Build list of eligible pending referrals
+  final pending = referrals
+      .where((r) => r.approvedProjectCount > 0 && !r.firstProjectRewarded)
+      .map((r) => <String, String>{
+            'referralId': r.referralId,
+            'referrerUserId': r.referrerUserId,
+          })
+      .toList();
+
+  if (pending.isEmpty) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('No pending referrals to credit'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+    return;
+  }
+
+  // Show progress dialog
+  if (!context.mounted) return;
+  final progressNotifier = ValueNotifier<int>(0);
+  final totalPending = pending.length;
+
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => _BulkProgressDialog(
+      total: totalPending,
+      progressNotifier: progressNotifier,
+      theme: theme,
+    ),
+  );
+
+  // Execute bulk credit
+  final result = await admin.bulkCreditReferralBonuses(
+    pendingReferrals: pending,
+    amount: amount,
+    notes: notes,
+    onProgress: (credited, total) {
+      progressNotifier.value = credited;
+    },
+  );
+
+  // Close progress dialog
+  if (context.mounted) {
+    Navigator.of(context).pop(); // closes the progress dialog
+
+    final successCount = result['successCount'] ?? 0;
+    final failCount = result['failCount'] ?? 0;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          failCount > 0
+              ? 'Credited $successCount/$totalPending ($failCount failed)'
+              : 'All $successCount/$totalPending credits successful!',
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+
+    // Reload data to refresh UI
+    admin.loadReferrals();
+    admin.loadUsers();
+  }
+}
+
+/// Full-screen progress dialog shown during bulk credit operations.
+class _BulkProgressDialog extends StatefulWidget {
+  final int total;
+  final ValueNotifier<int> progressNotifier;
+  final ThemeData theme;
+
+  const _BulkProgressDialog({
+    required this.total,
+    required this.progressNotifier,
+    required this.theme,
+  });
+
+  @override
+  State<_BulkProgressDialog> createState() => _BulkProgressDialogState();
+}
+
+class _BulkProgressDialogState extends State<_BulkProgressDialog> {
+  @override
+  void initState() {
+    super.initState();
+    widget.progressNotifier.addListener(_onProgress);
+  }
+
+  @override
+  void dispose() {
+    widget.progressNotifier.removeListener(_onProgress);
+    super.dispose();
+  }
+
+  void _onProgress() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final progress = widget.progressNotifier.value;
+    final total = widget.total;
+    final percent = total > 0 ? (progress / total) : 0.0;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.rocket_launch_rounded, size: 40, color: Color(0xFF22C55E)),
+            const SizedBox(height: 16),
+            Text(
+              'Crediting Referrals...',
+              style: widget.theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$progress of $total processed',
+              style: widget.theme.textTheme.bodyMedium?.copyWith(
+                color: widget.theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                value: percent,
+                minHeight: 8,
+                backgroundColor: widget.theme.colorScheme.surfaceContainerHighest,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF22C55E)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '${(percent * 100).toStringAsFixed(0)}%',
+              style: widget.theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF22C55E),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -126,6 +126,10 @@ void _stubCreditRewardFlow(
   // Notification stubs
   when(() => notifications.createNotification(any())).thenAnswer((_) async {});
 
+  // Update participation partial (for referralProcessed flag)
+  when(() => affiliate.updateParticipationPartial(any(), any()))
+      .thenAnswer((_) async {});
+
   // Referral: no referrer by default
   when(() => referral.getReferralByReferredUser(any()))
       .thenAnswer((_) async => null);
@@ -592,7 +596,7 @@ void main() {
             updates['approvedProjectCount'] == 1 &&
             (updates['rewardAmount'] as double) == 7.0 &&
             (updates['lifetimeProjectCommission'] as double) == 7.0 &&
-            (updates['rewardedProjectIds'] as List).contains(_projectId))),
+            (updates['rewardedProjectIds'] as List).contains(_participationId))),
       )).called(1);
     });
 
@@ -645,14 +649,14 @@ void main() {
             updates['approvedProjectCount'] == 2 &&
             (updates['lifetimeProjectCommission'] as double) ==
                 7.0 + expectedCommission &&
-            (updates['rewardedProjectIds'] as List).contains(_projectId))),
+            (updates['rewardedProjectIds'] as List).contains(_participationId))),
       )).called(1);
     });
 
     test('skips duplicate referral reward for already-rewarded project', () async {
       final referralRecord = createReferralRecord(
         firstProjectRewarded: true,
-        rewardedProjectIds: [_projectId], // already rewarded for this project
+        rewardedProjectIds: [_participationId], // already rewarded for this participation
         approvedProjectCount: 1,
         lifetimeProjectCommission: 7.0,
       );

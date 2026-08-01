@@ -7,10 +7,17 @@ service cloud.firestore {
 
     // Users
     // Regular users can read/update their own doc; admins can manage all users.
+    // QR code timestamp/metadata fields (qrCodeUploadedAt, qrCodeUpdatedAt, qrCodeUploadedBy)
+    // are OWNER-ONLY — admins cannot modify them. This prevents an admin from overwriting
+    // a user's QR code upload history or ownership trail.
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
-      allow update: if request.auth != null && (request.auth.uid == userId || isAdmin());
+      allow update: if request.auth != null && (
+        request.auth.uid == userId ||
+        (isAdmin() && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['qrCodeUploadedAt', 'qrCodeUpdatedAt', 'qrCodeUploadedBy']))
+      );
       allow delete: if isAdmin();
     }
 
@@ -269,10 +276,14 @@ match /project_participations/{participationId} {
     }
 
     // Support Chat Messages - user can read messages for their own tickets, admin can read all
-    // Cross-references the parent support_ticket document to verify ownership
+    // Uses ticketUserId stored directly on each message to avoid get()-based lookup
+    // on the parent ticket (which would hit the 20-get-per-query limit for long chats).
+    // Falls back to get()-based lookup for legacy messages that lack ticketUserId.
     match /support_chat_messages/{messageId} {
       allow read: if isAuthenticated() && (
-        get(/databases/$(database)/documents/support_tickets/$(resource.data.ticketId)).data.userId == request.auth.uid
+        resource.data.ticketUserId == request.auth.uid
+        || (resource.data.ticketUserId == null &&
+            get(/databases/$(database)/documents/support_tickets/$(resource.data.ticketId)).data.userId == request.auth.uid)
         || isAdmin()
       );
       allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;

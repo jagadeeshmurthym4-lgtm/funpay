@@ -197,6 +197,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
     hp.sendChatMessage(
       ticketId: _ticket.ticketId,
+      ticketUserId: _ticket.userId,
       userId: userId,
       userName: userName,
       text: text,

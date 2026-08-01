@@ -8,15 +8,15 @@ plugins {
 android {
     namespace = "com.spydev.funpay"
     compileSdk = 36
-    ndkVersion = "27.0.12077973"
+    ndkVersion = "27.0.12077973" // Hardcoded to match plugin requirements (flutter.ndkVersion resolves to 26.x causing warnings)
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17
+        jvmTarget = JavaVersion.VERSION_1_8
     }
 
     defaultConfig {
@@ -25,7 +25,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
-        targetSdk = 36
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -38,17 +38,20 @@ android {
 
     signingConfigs {
         release {
-            keyAlias = keystoreProps['keyAlias']
-            keyPassword = keystoreProps['keyPassword']
-            storeFile = keystoreProps['storeFile'] ? file(keystoreProps['storeFile']) : null
-            storePassword = keystoreProps['storePassword']
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProps['keyAlias']
+                keyPassword = keystoreProps['keyPassword']
+                storeFile = keystoreProps['storeFile'] ? file(keystoreProps['storeFile']) : null
+                storePassword = keystoreProps['storePassword']
+            }
         }
     }
     buildTypes {
         release {
-            signingConfig = signingConfigs.release
+            // Use the release keystore when key.properties exists (local builds),
+            // otherwise fall back to debug signing so CI can produce artifacts too.
+            signingConfig = keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled = true
-            shrinkResources = true
             proguardFiles(
                 getDefaultProguardFile('proguard-android-optimize.txt'),
                 'proguard-rules.pro'

@@ -12,6 +12,19 @@ class TicketFirestoreDataSource {
 
   // ─── Tickets ─────────────────────────────────────────────
 
+  /// Streams ALL support tickets for the admin panel (no userId filter).
+  Stream<List<SupportTicketModel>> streamAllTickets() {
+    return _firestore
+        .collection(AppConstants.ticketsCollection)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => SupportTicketModel.fromFirestore(doc.data()))
+          .toList();
+    });
+  }
+
   Future<void> createTicket(SupportTicketModel ticket) async {
     await _firestore
         .collection(AppConstants.ticketsCollection)
@@ -93,6 +106,8 @@ class TicketFirestoreDataSource {
       return messages;
     });
   }
+
+
 
   // ─── FAQs ────────────────────────────────────────────────
 

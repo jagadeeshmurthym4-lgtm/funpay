@@ -42,6 +42,16 @@ class SupportTicketRepositoryImpl implements SupportTicketRepository {
   }
 
   @override
+  Future<void> updateTicketStatus(String ticketId, String status) async {
+    await _dataSource.updateTicketStatus(ticketId, status);
+  }
+
+  @override
+  Stream<List<SupportTicketEntity>> streamAllTickets() {
+    return _dataSource.streamAllTickets();
+  }
+
+  @override
   Future<List<Map<String, dynamic>>> getFAQs() async {
     return await _dataSource.getFAQs();
   }

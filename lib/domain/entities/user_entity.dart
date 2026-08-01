@@ -30,6 +30,10 @@ class UserEntity {
   final List<String> portfolioLinks;
   final String? resumeUrl;
   final String? certificateUrl;
+  final String? upiQrCodeUrl;
+  final DateTime? qrCodeUploadedAt;
+  final DateTime? qrCodeUpdatedAt;
+  final String? qrCodeUploadedBy;
   final bool isVerified;
   final int profileCompletionPercentage;
 
@@ -65,6 +69,10 @@ class UserEntity {
     this.portfolioLinks = const [],
     this.resumeUrl,
     this.certificateUrl,
+    this.upiQrCodeUrl,
+    this.qrCodeUploadedAt,
+    this.qrCodeUpdatedAt,
+    this.qrCodeUploadedBy,
     this.isVerified = false,
     this.profileCompletionPercentage = 0,
   });
@@ -101,6 +109,10 @@ class UserEntity {
     List<String>? portfolioLinks,
     String? resumeUrl,
     String? certificateUrl,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
     bool? isVerified,
     int? profileCompletionPercentage,
   }) {
@@ -136,6 +148,10 @@ class UserEntity {
       portfolioLinks: portfolioLinks ?? this.portfolioLinks,
       resumeUrl: resumeUrl ?? this.resumeUrl,
       certificateUrl: certificateUrl ?? this.certificateUrl,
+      upiQrCodeUrl: upiQrCodeUrl ?? this.upiQrCodeUrl,
+      qrCodeUploadedAt: qrCodeUploadedAt ?? this.qrCodeUploadedAt,
+      qrCodeUpdatedAt: qrCodeUpdatedAt ?? this.qrCodeUpdatedAt,
+      qrCodeUploadedBy: qrCodeUploadedBy ?? this.qrCodeUploadedBy,
       isVerified: isVerified ?? this.isVerified,
       profileCompletionPercentage: profileCompletionPercentage ?? this.profileCompletionPercentage,
     );

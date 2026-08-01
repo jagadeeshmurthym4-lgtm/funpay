@@ -54,4 +54,33 @@ class CloudinaryService {
       return null;
     }
   }
+
+  /// Upload image bytes (from XFile.readAsBytes()) to Cloudinary.
+  /// Uses [folder] to organize uploads (default: 'qr_codes').
+  /// Returns null on failure.
+  Future<String?> uploadImageBytes({
+    required Uint8List imageBytes,
+    required String fileName,
+    String folder = 'qr_codes',
+  }) async {
+    try {
+      final byteData = ByteData.view(imageBytes.buffer, 0, imageBytes.length);
+      final response = await _cloudinary.uploadFile(
+        CloudinaryFile.fromByteData(
+          byteData,
+          identifier: fileName,
+          resourceType: CloudinaryResourceType.Image,
+          folder: folder,
+        ),
+      );
+      debugPrint('Cloudinary image upload success: ${response.secureUrl}');
+      return response.secureUrl;
+    } on CloudinaryException catch (e) {
+      debugPrint('Cloudinary image upload failed: ${e.message}');
+      return null;
+    } catch (e) {
+      debugPrint('Cloudinary image upload error: $e');
+      return null;
+    }
+  }
 }

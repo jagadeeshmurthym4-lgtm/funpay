@@ -38,6 +38,10 @@ abstract class AuthRepository {
     List<String>? portfolioLinks,
     String? profilePicture,
     String? coverImage,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
   });
 
   Future<void> sendPasswordResetEmail(String email, {Map<String, dynamic>? actionCodeSettings});

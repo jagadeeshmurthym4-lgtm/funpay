@@ -582,7 +582,7 @@ class _AffiliateProjectsListScreenState
                               Text(
                                 project.title,
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: isDark
                                       ? Colors.white
@@ -596,7 +596,7 @@ class _AffiliateProjectsListScreenState
                                     ? project.subtitle
                                     : project.category,
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 9,
                                   color: isDark
                                       ? AppTheme.textMuted
                                       : const Color(0xFF94A3B8),
@@ -616,10 +616,12 @@ class _AffiliateProjectsListScreenState
                         Text(
                           project.rewardText,
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF4ADE80),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -651,6 +653,8 @@ class _AffiliateProjectsListScreenState
                                 ? AppTheme.textMuted
                                 : const Color(0xFF94A3B8),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(width: 8),
                         Container(

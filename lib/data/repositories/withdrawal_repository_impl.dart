@@ -1,4 +1,5 @@
 import 'package:cashspark/core/errors/exceptions.dart';
+import 'package:cashspark/services/cloudinary_service.dart';
 import 'package:cashspark/services/fcm_service.dart';
 import 'package:cashspark/data/datasources/notification_firestore_datasource.dart';
 import 'package:cashspark/data/datasources/withdrawal_firestore_datasource.dart';
@@ -11,6 +12,7 @@ import 'package:cashspark/domain/entities/transaction_entity.dart';
 import 'package:cashspark/domain/entities/withdrawal_entity.dart';
 import 'package:cashspark/domain/repositories/withdrawal_repository.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 class WithdrawalRepositoryImpl implements WithdrawalRepository {
@@ -21,6 +23,8 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
 
   // Configurable withdrawal limits
   static const double minWithdrawalAmount = 45.0;
+  static const int maxQrSizeBytes = 5 * 1024 * 1024; // 5 MB
+  static const List<String> allowedQrFormats = ['png', 'jpg', 'jpeg'];
 
   WithdrawalRepositoryImpl({
     required WithdrawalFirestoreDataSource dataSource,
@@ -32,12 +36,85 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         _notificationDataSource = notificationDataSource,
         _uuid = uuid ?? const Uuid();
 
+  // ─── QR Code Management (via Cloudinary) ────────────────
+
+  /// Pick an image from gallery and upload as QR code to Cloudinary.
+  /// Returns the download URL on success, null on failure.
+  Future<String?> uploadQrCode({
+    required String userId,
+    required XFile imageFile,
+  }) async {
+    try {
+      // Validate file size
+      final fileSize = await imageFile.length();
+      if (fileSize > maxQrSizeBytes) {
+        throw WithdrawalException(
+          'Image size exceeds 5 MB limit. Please choose a smaller file.',
+        );
+      }
+
+      // Validate file extension
+      final extension = imageFile.path.split('.').last.toLowerCase();
+      if (!allowedQrFormats.contains(extension)) {
+        throw WithdrawalException(
+          'Invalid file format. Please upload a PNG, JPG, or JPEG image.',
+        );
+      }
+
+      // Upload to Cloudinary using bytes (more reliable than file path on Android)
+      final cloudinary = CloudinaryService.instance;
+      final fileName = 'qr_${userId}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final imageBytes = await imageFile.readAsBytes();
+      final downloadUrl = await cloudinary.uploadImageBytes(
+        imageBytes: imageBytes,
+        fileName: fileName,
+        folder: 'qr_codes',
+      );
+
+      if (downloadUrl == null) {
+        throw FirestoreException(
+          'Failed to upload QR code. Please try again.',
+        );
+      }
+
+      debugPrint('QR Code uploaded to Cloudinary for user: $userId');
+      return downloadUrl;
+    } on WithdrawalException {
+      rethrow;
+    } catch (e) {
+      debugPrint('[QR_DEBUG] Upload error: $e');
+      // Never show raw error messages to user
+      throw FirestoreException(
+        'Failed to upload QR code. Please try again.',
+      );
+    }
+  }
+
+  /// Delete the user's QR code reference.
+  /// Cloudinary does not support deletion via unsigned upload presets,
+  /// so we simply clear the URL reference. The old image remains in
+  /// Cloudinary but will never be served since we overwrite the Firestore
+  /// URL on next upload.
+  Future<bool> deleteQrCode({required String userId}) async {
+    // Cloudinary unsigned uploads don't provide a public delete API.
+    // The QR code URL in Firestore will be nulled out by the caller,
+    // and the next upload will create a new file.
+    return true;
+  }
+
+  // ─── Withdrawal Methods ─────────────────────────────────
+
   @override
   Future<WithdrawalEntity> requestWithdrawal({
     required String userId,
     required double amount,
     required WithdrawalMethod method,
     required String accountDetails,
+    String? qrCodeUrl,
+    String? userName,
+    String? userEmail,
+    String? userPhone,
+    double walletBalanceAtRequest = 0.0,
   }) async {
     try {
       // Validate withdrawal rules
@@ -64,6 +141,11 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         amount: amount,
         method: method,
         accountDetails: accountDetails,
+        qrCodeUrl: qrCodeUrl,
+        userName: userName,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        walletBalanceAtRequest: wallet.walletBalance,
         status: WithdrawalStatus.pending,
         requestedAt: DateTime.now(),
       );
@@ -134,7 +216,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   }) async {
     if (amount < minWithdrawalAmount) {
       throw WithdrawalException(
-          'Minimum withdrawal amount is \$${minWithdrawalAmount.toStringAsFixed(2)}');
+          'Minimum withdrawal amount is ₹${minWithdrawalAmount.toStringAsFixed(2)}');
     }
   }
 
@@ -161,6 +243,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   Future<WithdrawalEntity> markAsPaid(
     String withdrawalId, {
     String? remarks,
+    String? transactionId,
   }) async {
     try {
       final existing = await _dataSource.getWithdrawal(withdrawalId);
@@ -189,8 +272,9 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       );
 
       // Create debit transaction
+      final txnId = transactionId ?? _uuid.v4();
       final transaction = TransactionModel(
-        transactionId: _uuid.v4(),
+        transactionId: txnId,
         userId: existing.userId,
         type: TransactionType.debit,
         amount: existing.amount,
@@ -209,6 +293,12 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         amount: existing.amount,
         method: existing.method,
         accountDetails: existing.accountDetails,
+        qrCodeUrl: existing.qrCodeUrl,
+        userName: existing.userName,
+        userEmail: existing.userEmail,
+        userPhone: existing.userPhone,
+        walletBalanceAtRequest: existing.walletBalanceAtRequest,
+        transactionId: txnId,
         status: WithdrawalStatus.paid,
         adminRemarks: remarks,
         requestedAt: existing.requestedAt,
@@ -230,6 +320,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   Future<WithdrawalEntity> approveWithdrawal(
     String withdrawalId, {
     String? remarks,
+    String? transactionId,
   }) async {
     try {
       final existing = await _dataSource.getWithdrawal(withdrawalId);
@@ -241,6 +332,8 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       }
 
       final isAlreadyDeducted = existing.status == WithdrawalStatus.paid;
+      final txnId = transactionId ?? existing.transactionId ?? _uuid.v4();
+
       if (!isAlreadyDeducted) {
         // Check balance before approving
         final wallet = await _walletDataSource.getWallet(existing.userId);
@@ -261,7 +354,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
 
         // Create debit transaction
         final transaction = TransactionModel(
-          transactionId: _uuid.v4(),
+          transactionId: txnId,
           userId: existing.userId,
           type: TransactionType.debit,
           amount: existing.amount,
@@ -281,6 +374,12 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         amount: existing.amount,
         method: existing.method,
         accountDetails: existing.accountDetails,
+        qrCodeUrl: existing.qrCodeUrl,
+        userName: existing.userName,
+        userEmail: existing.userEmail,
+        userPhone: existing.userPhone,
+        walletBalanceAtRequest: existing.walletBalanceAtRequest,
+        transactionId: txnId,
         status: WithdrawalStatus.approved,
         adminRemarks: remarks,
         requestedAt: existing.requestedAt,
@@ -332,6 +431,12 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         amount: existing.amount,
         method: existing.method,
         accountDetails: existing.accountDetails,
+        qrCodeUrl: existing.qrCodeUrl,
+        userName: existing.userName,
+        userEmail: existing.userEmail,
+        userPhone: existing.userPhone,
+        walletBalanceAtRequest: existing.walletBalanceAtRequest,
+        transactionId: existing.transactionId,
         status: WithdrawalStatus.rejected,
         adminRemarks: remarks,
         requestedAt: existing.requestedAt,

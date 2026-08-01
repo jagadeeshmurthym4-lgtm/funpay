@@ -18,6 +18,10 @@ class AuthProvider extends ChangeNotifier {
   bool _isLoading = false;
   bool _isNewUser = false;
 
+  /// Prevents notifyListeners() after dispose, which would crash with
+  /// "InheritedProvider setState() after dispose" FlutterError.
+  bool _disposed = false;
+
   AuthProvider({
     required AuthRepository authRepository,
   }) : _authRepository = authRepository {
@@ -34,8 +38,9 @@ class AuthProvider extends ChangeNotifier {
   bool get needsProfileCompletion => _isNewUser || (_user != null && !_user!.profileCompleted);
 
   void _init() async {
+    if (_disposed) return;
     _status = AuthStatus.loading;
-    notifyListeners();
+    _safeNotifyListeners();
 
     final existingUser = _authRepository.currentUser;
     if (existingUser != null) {
@@ -43,17 +48,20 @@ class AuthProvider extends ChangeNotifier {
         _user = await _authRepository.getCurrentUser();
         _status = AuthStatus.authenticated;
         _isNewUser = _user != null && !_user!.profileCompleted;
-        notifyListeners();
+        _safeNotifyListeners();
       } catch (_) {
+        if (_disposed) return;
         _user = existingUser;
         _status = AuthStatus.authenticated;
         _isNewUser = existingUser.profileCompleted == false;
-        notifyListeners();
+        _safeNotifyListeners();
       }
     }
 
+    if (_disposed) return;
     _authSubscription = _authRepository.authStateChanges.listen(
       (userEntity) {
+        if (_disposed) return;
         if (_status == AuthStatus.authenticated && userEntity != null) {
           return;
         }
@@ -63,13 +71,14 @@ class AuthProvider extends ChangeNotifier {
           _user = null;
           _status = AuthStatus.unauthenticated;
         }
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         if (_status != AuthStatus.authenticated) {
           _errorMessage = error.toString();
           _status = AuthStatus.unauthenticated;
-          notifyListeners();
+          _safeNotifyListeners();
         }
       },
     );
@@ -115,12 +124,17 @@ class AuthProvider extends ChangeNotifier {
 
       // Bust Firestore cache after Google sign-in.
       unawaited(_bustCacheAfterLogin());
+    } on AuthCancelledException {
+      // User cancelled the Google account picker — silently ignore.
+      // Don't set any error message, don't change status.
+      _status = AuthStatus.unauthenticated;
     } on AuthException catch (e) {
       _errorMessage = e.message;
+      debugPrint('[AuthProvider] signInWithGoogle AuthException: ${e.message} (code: ${e.code})');
       _status = AuthStatus.unauthenticated;
     } catch (e) {
-      debugPrint('AuthProvider.signInWithGoogle error: $e${(e is Error) ? '\\n${e.stackTrace}' : ''}');
-      _errorMessage = 'Google sign-in failed. Please try again.';
+      debugPrint('[AuthProvider] signInWithGoogle error: $e${(e is Error) ? '\\n${e.stackTrace}' : ''}');
+      _errorMessage = 'Google sign-in failed. Please try again or use email sign-in.';
       _status = AuthStatus.unauthenticated;
     } finally {
       _setLoading(false);
@@ -191,7 +205,7 @@ class AuthProvider extends ChangeNotifier {
       _status = AuthStatus.unauthenticated;
     } finally {
       _isLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -326,19 +340,19 @@ class AuthProvider extends ChangeNotifier {
       final sent = await _authRepository.sendEmailVerification();
       if (sent) {
         _successMessage = 'Verification email sent! Please check your inbox.';
-        notifyListeners();
+        _safeNotifyListeners();
       } else {
         _successMessage = 'Your email is already verified.';
-        notifyListeners();
+        _safeNotifyListeners();
       }
       return sent;
     } on AuthException catch (e) {
       _errorMessage = e.message;
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     } catch (e) {
       _errorMessage = 'Failed to send verification email. Please try again.';
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     }
   }
@@ -349,11 +363,10 @@ class AuthProvider extends ChangeNotifier {
       final sent = await _authRepository.sendEmailVerification();
       if (sent) {
         _successMessage = 'Account created! Please check your email to verify your account.';
-        notifyListeners();
+        _safeNotifyListeners();
       }
     } catch (e) {
       debugPrint('[AuthProvider] _sendVerificationAfterSignUp error: $e');
-      // Non-critical — user can request verification later from settings.
     }
   }
 
@@ -381,12 +394,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> refreshUser() async {
+    if (_disposed) return;
     try {
       _user = await _authRepository.getCurrentUser();
       if (_user != null) {
         _isNewUser = !_user!.profileCompleted;
       }
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       // Silently fail
     }
@@ -408,6 +422,10 @@ class AuthProvider extends ChangeNotifier {
     List<String>? portfolioLinks,
     String? profilePicture,
     String? coverImage,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
   }) async {
     _setLoading(true);
     _clearError();
@@ -428,6 +446,10 @@ class AuthProvider extends ChangeNotifier {
         portfolioLinks: portfolioLinks,
         profilePicture: profilePicture,
         coverImage: coverImage,
+        upiQrCodeUrl: upiQrCodeUrl,
+        qrCodeUploadedAt: qrCodeUploadedAt,
+        qrCodeUpdatedAt: qrCodeUpdatedAt,
+        qrCodeUploadedBy: qrCodeUploadedBy,
       );
     } on AuthException catch (e) {
       _errorMessage = e.message;
@@ -462,14 +484,16 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_disposed) return;
     _isLoading = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _clearError() {
+    if (_disposed) return;
     _errorMessage = null;
     _successMessage = null;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   /// Force-refreshes all Firestore collections after login so the user
@@ -509,8 +533,16 @@ class AuthProvider extends ChangeNotifier {
     return 'Sign-up failed. Please try again.';
   }
 
+  void _safeNotifyListeners() {
+    if (_disposed) return;
+    try {
+      notifyListeners();
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
+    _disposed = true;
     _authSubscription?.cancel();
     super.dispose();
   }

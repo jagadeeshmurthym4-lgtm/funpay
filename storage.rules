@@ -3,32 +3,15 @@ rules_version = '2';
 // Firebase Storage Security Rules
 // Bucket: cashspark-c15bd.firebasestorage.app
 //
-// Path structure:
-//   submissions/{userId}/{projectId}/{filename}
-//       - Authenticated users can write to their own folder
-//       - Authenticated users can read their own files
-//       - Admins can read/write all files
-//   Everything else is denied by default.
+// As of July 2026, QR code uploads have been migrated to Cloudinary.
+// Firebase Storage is no longer actively used by the app.
+//
+// These rules deny all access by default. If a future feature needs
+// Firebase Storage, update this file and add the appropriate rules.
 
 service firebase.storage {
   match /b/{bucket}/o {
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Allow authenticated users to upload and read their own submission screenshots
-    match /submissions/{userId}/{projectId}/{filename} {
-      allow read: if isOwner(userId);
-      allow write: if isOwner(userId) && request.resource.size < 10 * 1024 * 1024; // max 10MB
-      allow delete: if isOwner(userId);
-    }
-
-    // Deny all other access by default
+    // Deny all operations — Storage is not actively used.
     match /{allPaths=**} {
       allow read, write: if false;
     }

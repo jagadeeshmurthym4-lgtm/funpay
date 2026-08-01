@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:cashspark/core/errors/exceptions.dart';
 import 'package:cashspark/data/repositories/withdrawal_repository_impl.dart';
 import 'package:cashspark/domain/entities/withdrawal_entity.dart';
+
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class WithdrawalProvider extends ChangeNotifier {
   final WithdrawalRepositoryImpl _withdrawalRepository;
@@ -15,6 +17,8 @@ class WithdrawalProvider extends ChangeNotifier {
   bool _hasPendingWithdrawal = false;
   bool _isLoading = false;
   bool _isSubmitting = false;
+  bool _isQrUploading = false;
+  String? _qrCodeUrl;
   String? _errorMessage;
   String? _successMessage;
 
@@ -28,11 +32,18 @@ class WithdrawalProvider extends ChangeNotifier {
   bool get hasPendingWithdrawal => _hasPendingWithdrawal;
   bool get isLoading => _isLoading;
   bool get isSubmitting => _isSubmitting;
+  bool get isQrUploading => _isQrUploading;
+  String? get qrCodeUrl => _qrCodeUrl;
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
 
   double get minWithdrawalAmount =>
       WithdrawalRepositoryImpl.minWithdrawalAmount;
+
+  void setQrCodeUrl(String? url) {
+    _qrCodeUrl = url;
+    notifyListeners();
+  }
 
   void listenToUserWithdrawals(String userId) {
     _userWithdrawalsSubscription?.cancel();
@@ -95,11 +106,86 @@ class WithdrawalProvider extends ChangeNotifier {
     }
   }
 
+  // ─── QR Code Management ─────────────────────────────────
+
+  /// Pick an image from gallery and upload as UPI QR Code.
+  Future<bool> uploadQrCode({
+    required String userId,
+    required XFile imageFile,
+  }) async {
+    _setQrUploading(true);
+    _clearMessages();
+    try {
+      final url = await _withdrawalRepository.uploadQrCode(
+        userId: userId,
+        imageFile: imageFile,
+      );
+      if (url != null) {
+        _qrCodeUrl = url;
+        _successMessage = '✅ QR Code uploaded successfully!';
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = 'Failed to upload QR Code. Please try again.';
+        notifyListeners();
+        return false;
+      }
+    } on WithdrawalException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    } on FirestoreException catch (e) {
+      _errorMessage = e.message;
+      notifyListeners();
+      return false;
+    } catch (e) {
+      // Never show raw Firebase errors to the user
+      debugPrint('[WithdrawalProvider] QR upload error: $e');
+      _errorMessage = 'Failed to upload QR Code. Please try again.';
+      notifyListeners();
+      return false;
+    } finally {
+      _setQrUploading(false);
+    }
+  }
+
+  /// Delete the user's QR Code from Firebase Storage.
+  Future<bool> deleteQrCode({required String userId}) async {
+    _setQrUploading(true);
+    _clearMessages();
+    try {
+      final success = await _withdrawalRepository.deleteQrCode(userId: userId);
+      if (success) {
+        _qrCodeUrl = null;
+        _successMessage = '🗑️ QR Code deleted successfully';
+        notifyListeners();
+        return true;
+      } else {
+        _errorMessage = 'Failed to delete QR Code.';
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = 'Failed to delete QR Code: $e';
+      notifyListeners();
+      return false;
+    } finally {
+      _setQrUploading(false);
+    }
+  }
+
+  // ─── Withdrawal Request ─────────────────────────────────
+
   Future<bool> requestWithdrawal({
     required String userId,
     required double amount,
     required WithdrawalMethod method,
     required String accountDetails,
+    String? qrCodeUrl,
+    String? userName,
+    String? userEmail,
+    String? userPhone,
+    double walletBalanceAtRequest = 0.0,
   }) async {
     _setSubmitting(true);
     _clearMessages();
@@ -109,6 +195,11 @@ class WithdrawalProvider extends ChangeNotifier {
         amount: amount,
         method: method,
         accountDetails: accountDetails,
+        qrCodeUrl: qrCodeUrl,
+        userName: userName,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        walletBalanceAtRequest: walletBalanceAtRequest,
       );
       _successMessage =
           'Withdrawal request of ₹${amount.toStringAsFixed(2)} submitted!';
@@ -129,7 +220,9 @@ class WithdrawalProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> markAsPaid(String withdrawalId, {String? remarks}) async {
+  // ─── Admin Actions ──────────────────────────────────────
+
+  Future<bool> markAsPaid(String withdrawalId, {String? remarks, String? transactionId}) async {
     _setSubmitting(true);
     _clearMessages();
     try {
@@ -137,6 +230,7 @@ class WithdrawalProvider extends ChangeNotifier {
           await _withdrawalRepository.markAsPaid(
             withdrawalId,
             remarks: remarks,
+            transactionId: transactionId,
           );
       _selectedWithdrawal = withdrawal;
       _successMessage = 'Withdrawal marked as paid!';
@@ -156,7 +250,7 @@ class WithdrawalProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> approveWithdrawal(String withdrawalId, {String? remarks}) async {
+  Future<bool> approveWithdrawal(String withdrawalId, {String? remarks, String? transactionId}) async {
     _setSubmitting(true);
     _clearMessages();
     try {
@@ -164,6 +258,7 @@ class WithdrawalProvider extends ChangeNotifier {
           await _withdrawalRepository.approveWithdrawal(
             withdrawalId,
             remarks: remarks,
+            transactionId: transactionId,
           );
       _selectedWithdrawal = withdrawal;
       _successMessage = 'Withdrawal approved successfully';
@@ -251,6 +346,11 @@ class WithdrawalProvider extends ChangeNotifier {
 
   void _setSubmitting(bool value) {
     _isSubmitting = value;
+    notifyListeners();
+  }
+
+  void _setQrUploading(bool value) {
+    _isQrUploading = value;
     notifyListeners();
   }
 

@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 
 /// Service for crash reporting and error monitoring via Firebase Crashlytics.
 ///
-/// Note: Crashlytics is not supported on Flutter Web. On web, this service
-/// will gracefully degrade and simply log errors to the console.
+/// On web, gracefully degrades to console logging.
+/// All error handlers are wrapped in try-catch to prevent handler crashes from
+/// propagating and causing ClientException / unhandled error crashes.
 class CrashMonitoringService {
   static final CrashMonitoringService _instance = CrashMonitoringService._();
   factory CrashMonitoringService() => _instance;
@@ -15,14 +16,18 @@ class CrashMonitoringService {
   /// Whether the current platform supports Crashlytics
   bool get _isSupported => !kIsWeb;
 
-  /// Initialize Crashlytics with error handling
+  /// Initialize Crashlytics with safe error handling.
+  /// All error callbacks are wrapped to prevent crashes in the handler itself.
   Future<void> initialize() async {
     if (_initialized) return;
 
     if (!_isSupported) {
-      // Crashlytics is not supported on web, just log errors to console
       FlutterError.onError = (errorDetails) {
-        FlutterError.dumpErrorToConsole(errorDetails);
+        try {
+          FlutterError.dumpErrorToConsole(errorDetails);
+        } catch (_) {
+          // Last-resort safety — never crash in the error handler
+        }
       };
       _initialized = true;
       debugPrint('CrashMonitoringService: Crashlytics not supported on web, using console logging');
@@ -30,29 +35,60 @@ class CrashMonitoringService {
     }
 
     try {
-      // Pass all unhandled errors to Crashlytics
+      // ── Flutter framework errors ──────────────────────────
+      // Catch all Flutter errors (RenderFlex, RenderBox, Provider, etc.)
+      // and forward to Crashlytics. The handler itself is wrapped in try-catch
+      // to prevent infinite crash loops.
       FlutterError.onError = (errorDetails) {
-        FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+        try {
+          FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+        } catch (reportError) {
+          // Crashlytics itself failed to report — fall back to console
+          try {
+            FlutterError.dumpErrorToConsole(errorDetails);
+            debugPrint('CrashMonitoringService: Crashlytics report failed: $reportError');
+          } catch (_) {}
+        }
       };
 
-      // Pass all platform errors to Crashlytics
+      // ── Platform / Dart errors ────────────────────────────
+      // Catch unhandled async errors, format errors, and native crashes.
+      // Wrapped in try-catch to prevent the error handler itself from crashing.
       PlatformDispatcher.instance.onError = (error, stack) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        try {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+        } catch (reportError) {
+          try {
+            debugPrint('CrashMonitoringService: Platform error handler failed: $reportError');
+            debugPrint('Original error: $error');
+            debugPrint('Stack: $stack');
+          } catch (_) {}
+        }
+        // Return true to indicate the error was handled (prevents app termination
+        // on web, but on mobile the app may still terminate for fatal errors).
         return true;
       };
 
-      // Set user identifier when available
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       _initialized = true;
       debugPrint('CrashMonitoringService initialized');
     } catch (e) {
-      debugPrint('Failed to initialize Crashlytics: $e');
+      // If Crashlytics fails to initialize (e.g. on emulators without Play Services),
+      // fall back to basic console error logging so the app still works.
+      try {
+        FlutterError.onError = (errorDetails) {
+          try {
+            FlutterError.dumpErrorToConsole(errorDetails);
+          } catch (_) {}
+        };
+      } catch (_) {}
+      debugPrint('CrashMonitoringService: Init failed (non-fatal): $e');
     }
   }
 
   /// Set the current user ID for crash reports
   Future<void> setUserId(String userId) async {
-    if (!_isSupported) return;
+    if (!_isSupported || !_initialized) return;
     try {
       await FirebaseCrashlytics.instance.setUserIdentifier(userId);
     } catch (_) {}
@@ -60,7 +96,7 @@ class CrashMonitoringService {
 
   /// Log a custom key-value pair for debugging crashes
   Future<void> setCustomKey(String key, String value) async {
-    if (!_isSupported) return;
+    if (!_isSupported || !_initialized) return;
     try {
       await FirebaseCrashlytics.instance.setCustomKey(key, value);
     } catch (_) {}

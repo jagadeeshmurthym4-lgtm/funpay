@@ -62,10 +62,13 @@ class MockAuthRepository implements AuthRepository {
     String? aboutMe,
     String? education,
     String? experience,
-    List<String>? skills,
     List<String>? portfolioLinks,
     String? profilePicture,
     String? coverImage,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
   }) async {
     throw UnimplementedError('updateProfile not needed for this test');
   }

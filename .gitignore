@@ -28,6 +28,14 @@ android/.gradle/
 android/app/build/
 android/local.properties
 android/key.properties
+
+# Secrets — never commit
+scripts/service-account-key.json
+*.jks
+*.keystore
+key.properties
+firebase-adminsdk.json
+.env
 android/gradlew.bat
 
 # iOS

@@ -1,6 +1,7 @@
 import 'package:cashspark/core/errors/exceptions.dart';
 import 'package:cashspark/core/utils/helpers.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:cashspark/data/datasources/firebase_auth_datasource.dart';
 import 'package:cashspark/data/datasources/firebase_firestore_datasource.dart';
 import 'package:cashspark/data/datasources/referral_firestore_datasource.dart';
@@ -149,12 +150,43 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return (user: userModel, isNewUser: false);
       }
+    } on AuthCancelledException {
+      // User cancelled the Google account picker — silently propagate
+      // so the UI doesn't show an error banner.
+      rethrow;
+    } on AuthConfigurationException catch (e) {
+      // Configuration errors (SHA mismatch, missing OAuth client, etc.)
+      debugPrint('[AuthRepo] AuthConfigurationException: ${e.message}');
+      throw AuthException(
+        'Google sign-in could not be completed due to a configuration issue. '
+        'Please update the app or contact support. (Error: AUTH_CONFIG)',
+      );
     } on auth.FirebaseAuthException catch (e) {
-      debugPrint('AuthRepo.signInWithGoogle FirebaseAuthException: ${e.code} - ${e.message}');
-      throw AuthException(_mapAuthError(e), code: e.code);
+      debugPrint('[AuthRepo] signInWithGoogle FirebaseAuthException: ${e.code} - ${e.message}');
+      if (e.code == 'invalid-credential') {
+        throw AuthException(
+          'Your Google sign-in session has expired. Please try again.',
+          code: e.code,
+        );
+      }
+      if (e.code == 'operation-not-allowed') {
+        throw AuthException(
+          'Google sign-in is not enabled. Please contact support.',
+          code: e.code,
+        );
+      }
+      throw AuthException(_mapGoogleAuthError(e), code: e.code);
+    } on PlatformException catch (e) {
+      // PlatformExceptions from the Google Sign-In plugin on Android
+      debugPrint('[AuthRepo] signInWithGoogle PlatformException:');
+      debugPrint('  code: ${e.code}');
+      debugPrint('  message: ${e.message}');
+      debugPrint('  details: ${e.details}');
+      throw AuthException(_mapPlatformSignInError(e), code: e.code);
     } catch (e, stack) {
-      debugPrint('AuthRepo.signInWithGoogle error: $e\n$stack');
-      throw AuthException('Google sign-in failed: ${e.toString()}');
+      debugPrint('[AuthRepo] signInWithGoogle unexpected error: $e');
+      debugPrint('  stack: $stack');
+      throw AuthException('Google sign-in failed. Please try again. If the issue persists, use email sign-in instead.');
     }
   }
 
@@ -470,6 +502,10 @@ class AuthRepositoryImpl implements AuthRepository {
     List<String>? portfolioLinks,
     String? profilePicture,
     String? coverImage,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
   }) async {
     try {
       final authUser = _authDataSource.currentUser;
@@ -516,6 +552,10 @@ class AuthRepositoryImpl implements AuthRepository {
         portfolioLinks: portfolioLinks,
         profilePicture: profilePicture,
         coverImage: coverImage,
+        upiQrCodeUrl: upiQrCodeUrl,
+        qrCodeUploadedAt: qrCodeUploadedAt,
+        qrCodeUpdatedAt: qrCodeUpdatedAt,
+        qrCodeUploadedBy: qrCodeUploadedBy,
         profileCompletionPercentage: completion,
       );
 
@@ -998,6 +1038,75 @@ class AuthRepositoryImpl implements AuthRepository {
       default:
         debugPrint('[AuthRepo] _mapPasswordResetError - unmapped code: "${e.code}", message: "${e.message}"');
         return 'Unable to send password reset email right now (${e.code}). Please try again later or contact support.';
+    }
+  }
+
+  /// Maps FirebaseAuth errors specifically for Google sign-in flows.
+  ///
+  /// Different from email sign-in errors because Google sign-in uses
+  /// `signInWithCredential` instead of `signInWithEmailAndPassword`.
+  String _mapGoogleAuthError(auth.FirebaseAuthException e) {
+    debugPrint('[AuthRepo] _mapGoogleAuthError - mapping code "${e.code}"');
+    switch (e.code) {
+      case 'invalid-credential':
+        return 'Your Google sign-in session has expired or is invalid. Please try again.';
+      case 'user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'operation-not-allowed':
+        return 'Google sign-in is not enabled. Please contact support.';
+      case 'too-many-requests':
+        return 'Too many sign-in attempts. Please wait a moment and try again.';
+      case 'account-exists-with-different-credential':
+        return 'An account already exists with this email using a different sign-in method. Please sign in with your email and password.';
+      case 'network-request-failed':
+        return 'Network error. Please check your internet connection and try again.';
+      case 'credential-already-in-use':
+        return 'This Google account is already linked to another user.';
+      case 'requires-recent-login':
+        return 'Please sign out and sign in again before making this change.';
+      case 'web-context-already-presented':
+        return 'Sign-in is already in progress. Please wait.';
+      default:
+        debugPrint('[AuthRepo] _mapGoogleAuthError - unmapped code: "${e.code}", message: "${e.message}"');
+        return 'Google sign-in encountered an issue (${e.code}). Please try again or use email sign-in.';
+    }
+  }
+
+  /// Maps PlatformException errors from the Google Sign-In Android plugin.
+  ///
+  /// These are thrown by `google_sign_in_android`'s native code when the
+  /// underlying Google Sign-In API returns an error. Common causes:
+  /// - SHA-1/SHA-256 fingerprint mismatch
+  /// - OAuth client ID mismatch
+  /// - Missing Google Play Services
+  String _mapPlatformSignInError(PlatformException e) {
+    debugPrint('[AuthRepo] _mapPlatformSignInError - code: "${e.code}", message: "${e.message}", details: "${e.details}"');
+    switch (e.code) {
+      case 'sign_in_failed':
+        // This is the most common error. It can mean:
+        // 1. SHA fingerprint not registered in Firebase Console
+        // 2. Package name mismatch
+        // 3. Invalid client ID
+        if (e.message != null && e.message!.contains('certificate')) {
+          debugPrint('[AuthRepo] ⚠️ DETECTED CERTIFICATE/SHA FINGERPRINT ISSUE');
+          debugPrint('[AuthRepo] The app\'s signing certificate is not registered in Firebase Console.');
+          debugPrint('[AuthRepo] Verify that the SHA-1 and SHA-256 fingerprints of BOTH the upload key');
+          debugPrint('[AuthRepo] AND the Play App Signing key are added to the Firebase Android app.');
+        }
+        return 'Unable to sign in with Google. This may be due to an app configuration issue. Please try again or use email sign-in.';
+      case 'network_error':
+        return 'Network error. Please check your internet connection and try again.';
+      case 'internal_error':
+        debugPrint('[AuthRepo] ⚠️ internal_error from Google Sign-In - often means SHA mismatch or Play Services issue');
+        return 'Google sign-in encountered an internal error. Please try again or use email sign-in.';
+      case 'sign_in_cancelled':
+        // Shouldn't reach here since cancellation is handled separately
+        return 'Sign-in was cancelled.';
+      case 'sign_in_required':
+        return 'Please select a Google account to sign in.';
+      default:
+        debugPrint('[AuthRepo] _mapPlatformSignInError - unmapped code: "${e.code}"');
+        return 'Google sign-in failed. Please try again or use email sign-in.';
     }
   }
 

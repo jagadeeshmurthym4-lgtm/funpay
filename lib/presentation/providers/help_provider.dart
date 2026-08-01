@@ -4,6 +4,8 @@ import 'package:cashspark/core/constants/app_constants.dart';
 import 'package:cashspark/domain/entities/chat_message_entity.dart';
 import 'package:cashspark/domain/entities/support_ticket_entity.dart';
 import 'package:cashspark/domain/repositories/support_ticket_repository.dart';
+import 'package:cashspark/services/fcm_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Icons;
 import 'package:http/http.dart' as http;
@@ -154,7 +156,21 @@ class HelpProvider extends ChangeNotifier {
       _successMessage = 'Ticket #$ticketId created successfully!';
       debugPrint('[HelpProvider] Ticket created: $ticketId for user $userId');
 
-      // Notify the admin via email through the CPX server (best-effort)
+      // Also save the initial message as a chat message so it appears in the chat
+      final msgId = _generateId('msg');
+      final initialMsg = ChatMessageEntity(
+        messageId: msgId,
+        ticketId: ticketId,
+        ticketUserId: userId,
+        senderId: userId,
+        senderName: 'User',
+        text: message,
+        createdAt: now,
+      );
+      await _ticketRepository.sendMessage(initialMsg);
+
+      // Notify admin via FCM and email (best-effort)
+      _notifyAdminViaFcm('A User', subject);
       _notifyAdminViaEmail(ticketId, userId, subject, message, category, deviceInfo);
 
       return ticketId;
@@ -198,6 +214,7 @@ class HelpProvider extends ChangeNotifier {
     required String userId,
     required String userName,
     required String text,
+    String? ticketUserId,
     MessageSender senderType = MessageSender.user,
   }) async {
     _clearMessages();
@@ -206,6 +223,7 @@ class HelpProvider extends ChangeNotifier {
       final message = ChatMessageEntity(
         messageId: messageId,
         ticketId: ticketId,
+        ticketUserId: ticketUserId ?? userId,
         senderId: userId,
         senderName: userName,
         senderType: senderType,
@@ -213,6 +231,9 @@ class HelpProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
       );
       await _ticketRepository.sendMessage(message);
+
+      // Notify admin via FCM push about the new message
+      _notifyAdminViaFcm(userName, text);
     } catch (e) {
       _errorMessage = 'Failed to send message';
       notifyListeners();
@@ -222,6 +243,31 @@ class HelpProvider extends ChangeNotifier {
   void clearMessages() {
     _chatMessages = [];
     _chatSubscription?.cancel();
+  }
+
+  /// Sends an FCM push notification to all admins when a user sends
+  /// a new chat message. Queries the admins collection to find admin UIDs
+  /// and sends a targeted push to each admin's `user_{adminId}` FCM topic.
+  /// Best-effort — failures are silently logged.
+  Future<void> _notifyAdminViaFcm(String userName, String text) async {
+    try {
+      final adminsSnapshot = await FirebaseFirestore.instance
+          .collection(AppConstants.adminsCollection)
+          .get();
+      for (final doc in adminsSnapshot.docs) {
+        final adminId = doc.id;
+        if (adminId.isNotEmpty) {
+          await FcmService.sendTargetedPush(
+            userId: adminId,
+            title: 'New message from $userName',
+            message: text,
+            type: 'chat_message',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[HelpProvider] FCM admin notification error: $e');
+    }
   }
 
   /// Sends a ticket notification email to the admin via the CPX server.

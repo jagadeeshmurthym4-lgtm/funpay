@@ -4,6 +4,7 @@ class ChatMessageModel extends ChatMessageEntity {
   const ChatMessageModel({
     required super.messageId,
     required super.ticketId,
+    required super.ticketUserId,
     required super.senderId,
     required super.senderName,
     super.senderType = MessageSender.user,
@@ -15,6 +16,7 @@ class ChatMessageModel extends ChatMessageEntity {
     return ChatMessageModel(
       messageId: entity.messageId,
       ticketId: entity.ticketId,
+      ticketUserId: entity.ticketUserId,
       senderId: entity.senderId,
       senderName: entity.senderName,
       senderType: entity.senderType,
@@ -27,6 +29,7 @@ class ChatMessageModel extends ChatMessageEntity {
     return ChatMessageModel(
       messageId: map['messageId'] as String? ?? '',
       ticketId: map['ticketId'] as String? ?? '',
+      ticketUserId: map['ticketUserId'] as String? ?? map['senderId'] as String? ?? '',
       senderId: map['senderId'] as String? ?? '',
       senderName: map['senderName'] as String? ?? '',
       senderType: _parseSender(map['senderType'] as String? ?? 'user'),
@@ -39,6 +42,7 @@ class ChatMessageModel extends ChatMessageEntity {
     return {
       'messageId': messageId,
       'ticketId': ticketId,
+      'ticketUserId': ticketUserId,
       'senderId': senderId,
       'senderName': senderName,
       'senderType': senderType.name,

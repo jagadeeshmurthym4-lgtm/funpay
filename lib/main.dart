@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cashspark/app.dart';
 import 'package:cashspark/data/datasources/firebase_auth_datasource.dart';
 import 'package:cashspark/data/datasources/firebase_firestore_datasource.dart';
@@ -64,303 +65,270 @@ import 'package:cashspark/services/fcm_service.dart';
 import 'package:cashspark/services/firestore_cache_busting_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Log all Flutter framework errors (RenderFlex, RenderBox, Overflow, Null, etc.)
-  // to the debug console so they can be diagnosed instead of silently producing
-  // gray/blank UI areas.
-  FlutterError.onError = (details) {
-    debugPrint('══════ FLUTTER FRAMEWORK ERROR ══════');
+/// Global error handler for all uncaught Flutter/Dart exceptions.
+///
+/// Catches errors that would otherwise crash the app:
+/// - InheritedProvider setState() after dispose
+/// - Provider null check operator crashes
+/// - Firebase SDK internal errors
+/// - Any other unhandled async error
+///
+/// The handler itself is crash-proof — it never throws.
+void _globalErrorHandler(FlutterErrorDetails details) {
+  try {
+    debugPrint('══════ GLOBAL ERROR HANDLER ══════');
     debugPrint('Exception: ${details.exception}');
     debugPrint('Stack trace:\n${details.stack}');
     debugPrint('══════════════════════════════════════');
-  };
-
-  // Initialize Firebase (uses firebase_options.dart for web config)
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Configure Firestore settings to:
-  // 1. Keep persistence enabled for offline support
-  // 2. Set a reasonable cache size (default is 100MB)
-  // 3. Ensure we always prefer the latest server data
-  final firestore = FirebaseFirestore.instance;
-  firestore.settings = const Settings(
-    persistenceEnabled: true,
-    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-  );
-  debugPrint('[Main] Firestore settings configured - persistence enabled, cache unlimited');
-  debugPrint('[Main] Firebase project: ${firestore.app.options.projectId}');
-
-  // Initialize crash monitoring (handles web gracefully)
-  try {
-    final crashMonitoring = CrashMonitoringService();
-    await crashMonitoring.initialize();
-  } catch (e) {
-    debugPrint('[Main] CrashMonitoring init failed (non-fatal): $e');
+    // Attempt to forward to Crashlytics if available
+    if (!kIsWeb) {
+      try {
+        FirebaseCrashlytics.instance.recordFlutterFatalError(details);
+      } catch (_) {}
+    }
+  } catch (_) {
+    // Never crash in the error handler itself
   }
+}
 
-  // Initialize connectivity monitoring
-  try {
-    final connectivityService = ConnectivityService();
-    await connectivityService.initialize();
-  } catch (e) {
-    debugPrint('[Main] ConnectivityService init failed (non-fatal): $e');
-  }
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize AdMob for rewarded ads (mobile-only — safely skip on web)
-  try {
-    final adService = AdMobServiceImpl.instance;
-    await adService.initialize();
-  } catch (e) {
-    debugPrint('[Main] AdMob init failed (non-fatal on web): $e');
-  }
+  // Set a global FlutterError handler that never crashes.
+  // crash_monitoring_service.dart will REPLACE this with its Crashlytics
+  // handler once initialized, but if it fails, this fallback remains active.
+  FlutterError.onError = _globalErrorHandler;
 
-  // Initialize Cloudinary for screenshot uploads
-  try {
-    CloudinaryService.initialize(
-      cloudName: 'q9recjxy',
-      uploadPreset: 'funny_uploads',
-    );
-  } catch (e) {
-    debugPrint('[Main] Cloudinary init failed (non-fatal): $e');
-  }
+  // Wrap everything in a zone that catches ALL unhandled async errors,
+  // including Provider lifecycle errors, Firebase SDK internal errors, etc.
+  runZonedGuarded(() async {
+    try {
+      // ── Firebase Initialization ──────────────────────────
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-  // Initialize cache-busting service and refresh on app start
-  try {
-    final cacheBustingService = FirestoreCacheBustingService();
-    await cacheBustingService.refreshOnAppStart();
-  } catch (e) {
-    debugPrint('[Main] CacheBusting init failed (non-fatal): $e');
-  }
+      final firestore = FirebaseFirestore.instance;
+      firestore.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+      debugPrint('[Main] Firestore settings configured');
+      debugPrint('[Main] Firebase project: ${firestore.app.options.projectId}');
 
-  // Initialize datasources
-  final firebaseAuthDataSource = FirebaseAuthDataSource();
-  final firebaseFirestoreDataSource = FirebaseFirestoreDataSource();
-  final walletFirestoreDataSource = WalletFirestoreDataSource();
-  final referralFirestoreDataSource = ReferralFirestoreDataSource();
-  final rewardFirestoreDataSource = RewardFirestoreDataSource();
-  final withdrawalFirestoreDataSource = WithdrawalFirestoreDataSource();
-  final adminFirestoreDataSource = AdminFirestoreDataSource();
-  final fraudFirestoreDataSource = FraudFirestoreDataSource();
-  final ticketFirestoreDataSource = TicketFirestoreDataSource();
-  final notificationFirestoreDataSource = NotificationFirestoreDataSource();
-  final consentFirestoreDataSource = ConsentFirestoreDataSource();
-  final offerFirestoreDataSource = OfferFirestoreDataSource();
-  final projectFirestoreDataSource = ProjectFirestoreDataSource();
-  final affiliateProjectFirestoreDataSource = AffiliateProjectFirestoreDataSource();
-  final referralLevelFirestoreDataSource = ReferralLevelFirestoreDataSource();
-  final streakMultiplierFirestoreDataSource = StreakMultiplierFirestoreDataSource();
-  final scratchCardFirestoreDataSource = ScratchCardFirestoreDataSource();
-  final couponFirestoreDataSource = CouponFirestoreDataSource();
+      // ── Services Initialization ──────────────────────────
+      try {
+        await CrashMonitoringService().initialize();
+      } catch (e) {
+        debugPrint('[Main] CrashMonitoring init failed (non-fatal): $e');
+      }
 
-  // Initialize repositories
-  final authRepository = AuthRepositoryImpl(
-    authDataSource: firebaseAuthDataSource,
-    firestoreDataSource: firebaseFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-    referralDataSource: referralFirestoreDataSource,
-  );
+      try {
+        await ConnectivityService().initialize();
+      } catch (e) {
+        debugPrint('[Main] ConnectivityService init failed (non-fatal): $e');
+      }
 
-  final walletRepository = WalletRepositoryImpl(
-    dataSource: walletFirestoreDataSource,
-  );
+      try {
+        await AdMobServiceImpl.instance.initialize();
+      } catch (e) {
+        debugPrint('[Main] AdMob init failed (non-fatal): $e');
+      }
 
-  final referralRepository = ReferralRepositoryImpl(
-    dataSource: referralFirestoreDataSource,
-  );
+      try {
+        CloudinaryService.initialize(
+          cloudName: 'q9recjxy',
+          uploadPreset: 'funny_uploads',
+        );
+      } catch (e) {
+        debugPrint('[Main] Cloudinary init failed (non-fatal): $e');
+      }
 
-  final rewardRepository = RewardRepositoryImpl(
-    dataSource: rewardFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-    notificationDataSource: notificationFirestoreDataSource,
-    streakMultiplierDataSource: streakMultiplierFirestoreDataSource,
-  );
+      try {
+        await FirestoreCacheBustingService().refreshOnAppStart();
+      } catch (e) {
+        debugPrint('[Main] CacheBusting init failed (non-fatal): $e');
+      }
 
-  final withdrawalRepository = WithdrawalRepositoryImpl(
-    dataSource: withdrawalFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-    notificationDataSource: notificationFirestoreDataSource,
-  );
+      // ── Data Sources ─────────────────────────────────────
+      final firebaseAuthDataSource = FirebaseAuthDataSource();
+      final firebaseFirestoreDataSource = FirebaseFirestoreDataSource();
+      final walletFirestoreDataSource = WalletFirestoreDataSource();
+      final referralFirestoreDataSource = ReferralFirestoreDataSource();
+      final rewardFirestoreDataSource = RewardFirestoreDataSource();
+      final withdrawalFirestoreDataSource = WithdrawalFirestoreDataSource();
+      final adminFirestoreDataSource = AdminFirestoreDataSource();
+      final fraudFirestoreDataSource = FraudFirestoreDataSource();
+      final ticketFirestoreDataSource = TicketFirestoreDataSource();
+      final notificationFirestoreDataSource = NotificationFirestoreDataSource();
+      final consentFirestoreDataSource = ConsentFirestoreDataSource();
+      final offerFirestoreDataSource = OfferFirestoreDataSource();
+      final projectFirestoreDataSource = ProjectFirestoreDataSource();
+      final affiliateProjectFirestoreDataSource = AffiliateProjectFirestoreDataSource();
+      final referralLevelFirestoreDataSource = ReferralLevelFirestoreDataSource();
+      final streakMultiplierFirestoreDataSource = StreakMultiplierFirestoreDataSource();
+      final scratchCardFirestoreDataSource = ScratchCardFirestoreDataSource();
+      final couponFirestoreDataSource = CouponFirestoreDataSource();
 
-  final adminRepository = AdminRepositoryImpl(
-    dataSource: adminFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-    notificationDataSource: notificationFirestoreDataSource,
-  );
+      // ── Repositories ─────────────────────────────────────
+      final authRepository = AuthRepositoryImpl(
+        authDataSource: firebaseAuthDataSource,
+        firestoreDataSource: firebaseFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+        referralDataSource: referralFirestoreDataSource,
+      );
+      final walletRepository = WalletRepositoryImpl(dataSource: walletFirestoreDataSource);
+      final referralRepository = ReferralRepositoryImpl(dataSource: referralFirestoreDataSource);
+      final rewardRepository = RewardRepositoryImpl(
+        dataSource: rewardFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+        notificationDataSource: notificationFirestoreDataSource,
+        streakMultiplierDataSource: streakMultiplierFirestoreDataSource,
+      );
+      final withdrawalRepository = WithdrawalRepositoryImpl(
+        dataSource: withdrawalFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+        notificationDataSource: notificationFirestoreDataSource,
+      );
+      final adminRepository = AdminRepositoryImpl(
+        dataSource: adminFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+        notificationDataSource: notificationFirestoreDataSource,
+      );
+      final fraudRepository = FraudRepositoryImpl(dataSource: fraudFirestoreDataSource);
+      final notificationRepository = NotificationRepositoryImpl(dataSource: notificationFirestoreDataSource);
+      final consentRepository = ConsentRepositoryImpl(dataSource: consentFirestoreDataSource);
+      final ticketRepository = SupportTicketRepositoryImpl(dataSource: ticketFirestoreDataSource);
+      final offerRepository = OfferRepositoryImpl(dataSource: offerFirestoreDataSource);
+      final projectRepository = ProjectRepositoryImpl(dataSource: projectFirestoreDataSource);
+      final scratchCardRepository = ScratchCardRepositoryImpl(
+        dataSource: scratchCardFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+      );
+      final referralLevelRepository = ReferralLevelRepositoryImpl(
+        dataSource: referralLevelFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+      );
+      final streakMultiplierRepository = StreakMultiplierRepositoryImpl(
+        dataSource: streakMultiplierFirestoreDataSource,
+      );
+      final couponRepository = CouponRepositoryImpl(dataSource: couponFirestoreDataSource);
+      final affiliateProjectRepository = AffiliateProjectRepositoryImpl(
+        dataSource: affiliateProjectFirestoreDataSource,
+        walletDataSource: walletFirestoreDataSource,
+        notificationDataSource: notificationFirestoreDataSource,
+        adminDataSource: adminFirestoreDataSource,
+      );
+      final fcmService = FcmService();
 
-  final fraudRepository = FraudRepositoryImpl(
-    dataSource: fraudFirestoreDataSource,
-  );
-
-  final notificationRepository = NotificationRepositoryImpl(
-    dataSource: notificationFirestoreDataSource,
-  );
-
-  final consentRepository = ConsentRepositoryImpl(
-    dataSource: consentFirestoreDataSource,
-  );
-
-  final ticketRepository = SupportTicketRepositoryImpl(
-    dataSource: ticketFirestoreDataSource,
-  );
-
-  final offerRepository = OfferRepositoryImpl(
-    dataSource: offerFirestoreDataSource,
-  );
-
-  final projectRepository = ProjectRepositoryImpl(
-    dataSource: projectFirestoreDataSource,
-  );
-
-  final scratchCardRepository = ScratchCardRepositoryImpl(
-    dataSource: scratchCardFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-  );
-
-  final referralLevelRepository = ReferralLevelRepositoryImpl(
-    dataSource: referralLevelFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-  );
-
-  final streakMultiplierRepository = StreakMultiplierRepositoryImpl(
-    dataSource: streakMultiplierFirestoreDataSource,
-  );
-
-  final couponRepository = CouponRepositoryImpl(
-    dataSource: couponFirestoreDataSource,
-  );
-
-  final affiliateProjectRepository = AffiliateProjectRepositoryImpl(
-    dataSource: affiliateProjectFirestoreDataSource,
-    walletDataSource: walletFirestoreDataSource,
-    notificationDataSource: notificationFirestoreDataSource,
-    adminDataSource: adminFirestoreDataSource,
-  );
-
-  // Create a shared FcmService instance for the whole app lifecycle
-  final fcmService = FcmService();
-
-  runApp(
-    MultiProvider(
-      providers: [
-        // Direct repository providers for screens that need them
-        Provider<RewardRepository>.value(value: rewardRepository),
-        Provider<WalletRepository>.value(value: walletRepository),
-
-        ChangeNotifierProvider(
-          create: (_) => ThemeProvider(),
+      // ── Run App ──────────────────────────────────────────
+      runApp(
+        MultiProvider(
+          providers: [
+            Provider<RewardRepository>.value(value: rewardRepository),
+            Provider<WalletRepository>.value(value: walletRepository),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+            ChangeNotifierProvider(create: (_) => LanguageProvider()),
+            ChangeNotifierProvider(
+              create: (_) => AuthProvider(authRepository: authRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => WalletProvider(
+                walletRepository: walletRepository,
+                rewardRepository: rewardRepository,
+                referralRepository: referralRepository,
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ReferralProvider(referralRepository: referralRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => RewardProvider(rewardRepository: rewardRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => WithdrawalProvider(withdrawalRepository: withdrawalRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => AdminProvider(adminRepository: adminRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => NotificationProvider(
+                notificationRepository: notificationRepository,
+                fcmService: fcmService,
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ConsentProvider(consentRepository: consentRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => FraudProvider(fraudRepository: fraudRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => OfferProvider(offerRepository: offerRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ProjectProvider(projectRepository: projectRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => AffiliateProjectProvider(repository: affiliateProjectRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => HelpProvider(ticketRepository: ticketRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => SearchProvider(
+                offerRepository: offerRepository,
+                projectRepository: projectRepository,
+              ),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ScratchCardProvider(scratchCardRepository: scratchCardRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => CouponProvider(couponRepository: couponRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => ReferralLevelProvider(repository: referralLevelRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => StreakMultiplierProvider(repository: streakMultiplierRepository),
+            ),
+          ],
+          child: const FunPayApp(),
         ),
-        ChangeNotifierProvider(
-          create: (_) => LanguageProvider(),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AuthProvider(
-            authRepository: authRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => WalletProvider(
-            walletRepository: walletRepository,
-            rewardRepository: rewardRepository,
-            referralRepository: referralRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ReferralProvider(
-            referralRepository: referralRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => RewardProvider(
-            rewardRepository: rewardRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => WithdrawalProvider(
-            withdrawalRepository: withdrawalRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AdminProvider(
-            adminRepository: adminRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => NotificationProvider(
-            notificationRepository: notificationRepository,
-            fcmService: fcmService, // Inject shared FcmService instance
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ConsentProvider(
-            consentRepository: consentRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => FraudProvider(
-            fraudRepository: fraudRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => OfferProvider(
-            offerRepository: offerRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ProjectProvider(
-            projectRepository: projectRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => AffiliateProjectProvider(
-            repository: affiliateProjectRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => HelpProvider(
-            ticketRepository: ticketRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => SearchProvider(
-            offerRepository: offerRepository,
-            projectRepository: projectRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ScratchCardProvider(
-            scratchCardRepository: scratchCardRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => CouponProvider(
-            couponRepository: couponRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => ReferralLevelProvider(
-            repository: referralLevelRepository,
-          ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => StreakMultiplierProvider(
-            repository: streakMultiplierRepository,
-          ),
-        ),
-      ],
-      child: const FunPayApp(),
-    ),
-  );
-
-  // FCM initialization is now lazy — triggered on first user login via
-  // app.dart auth state handler → NotificationProvider.setUser() → initializeFcm().
-  // The shared FcmService instance is injected into NotificationProvider above.
+      );
+    } catch (e, stack) {
+      // If anything in the initialization throws, log it and try to show the app anyway
+      debugPrint('[Main] Fatal init error: $e\n$stack');
+      if (!kIsWeb) {
+        try {
+          FirebaseCrashlytics.instance.recordError(e, stack, fatal: false);
+        } catch (_) {}
+      }
+      // Re-throw so runZonedGuarded catches it
+      rethrow;
+    }
+  }, (error, stack) {
+    // Zone error handler - catches EVERYTHING that wasn't caught above
+    try {
+      debugPrint('══════ ZONE ERROR HANDLER ══════');
+      debugPrint('Unhandled zone error: $error');
+      debugPrint('Stack: $stack');
+      debugPrint('══════════════════════════════════════');
+      if (!kIsWeb) {
+        try {
+          FirebaseCrashlytics.instance.recordError(error, stack, fatal: false);
+        } catch (_) {}
+      }
+    } catch (_) {
+      // Never crash in the error handler
+    }
+  });
 }

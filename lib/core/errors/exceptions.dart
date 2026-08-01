@@ -7,6 +7,24 @@ class AuthException implements Exception {
   String toString() => 'AuthException: $message (code: $code)';
 }
 
+/// Thrown when the user cancels a Google sign-in flow.
+/// This is not an error — it's a user-initiated action that should be silently ignored.
+class AuthCancelledException implements Exception {
+  @override
+  String toString() => 'AuthCancelledException: User cancelled sign-in';
+}
+
+/// Thrown when the Google Sign-In or Firebase Auth configuration is incorrect.
+/// This usually means SHA fingerprints, OAuth client IDs, or serverClientId
+/// are not properly set up in Firebase Console.
+class AuthConfigurationException implements Exception {
+  final String message;
+  const AuthConfigurationException(this.message);
+
+  @override
+  String toString() => 'AuthConfigurationException: $message';
+}
+
 class FirestoreException implements Exception {
   final String message;
   final String? code;

@@ -7,6 +7,10 @@ abstract class SupportTicketRepository {
   Stream<List<SupportTicketEntity>> streamUserTickets(String userId);
   Future<SupportTicketEntity?> getTicket(String ticketId);
 
+  Stream<List<SupportTicketEntity>> streamAllTickets();
+
+  Future<void> updateTicketStatus(String ticketId, String status);
+
   Future<void> sendMessage(ChatMessageEntity message);
   Stream<List<ChatMessageEntity>> streamMessages(String ticketId);
 

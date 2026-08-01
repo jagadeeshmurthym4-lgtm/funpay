@@ -21,6 +21,9 @@ class ReferralProvider extends ChangeNotifier {
   double _lifetimeProjectCommission = 0.0;
   double _firstProjectBonusTotal = 0.0;
 
+  /// Prevents notifyListeners() after dispose.
+  bool _disposed = false;
+
   ReferralProvider({
     required ReferralRepository referralRepository,
   }) : _referralRepository = referralRepository;
@@ -41,11 +44,20 @@ class ReferralProvider extends ChangeNotifier {
   /// Total ₹7 first-project bonuses earned.
   double get firstProjectBonusTotal => _firstProjectBonusTotal;
 
+  void _safeNotifyListeners() {
+    if (_disposed) return;
+    try {
+      notifyListeners();
+    } catch (_) {}
+  }
+
   void listenToReferrals(String userId) {
+    if (_disposed) return;
     _referralsSubscription?.cancel();
     _referralsSubscription =
         _referralRepository.streamReferralsByReferrer(userId).listen(
       (referrals) {
+        if (_disposed) return;
         _referrals = referrals;
         _referralCount = referrals.length;
         _totalEarnings = referrals.fold<double>(
@@ -61,11 +73,12 @@ class ReferralProvider extends ChangeNotifier {
         _firstProjectBonusTotal = referrals
             .where((r) => r.firstProjectRewarded)
             .fold<double>(0, (sum, r) => sum + 7.0);
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         _errorMessage = error.toString();
-        notifyListeners();
+        _safeNotifyListeners();
       },
     );
   }
@@ -100,9 +113,10 @@ class ReferralProvider extends ChangeNotifier {
   }
 
   Future<void> loadRewardConfig() async {
+    if (_disposed) return;
     try {
       _rewardConfig = await _referralRepository.getRewardConfig();
-      notifyListeners();
+      _safeNotifyListeners();
     } catch (e) {
       // Silently fail - default config will be used
     }
@@ -117,17 +131,20 @@ class ReferralProvider extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_disposed) return;
     _isLoading = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _clearError() {
+    if (_disposed) return;
     _errorMessage = null;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     cancelSubscription();
     super.dispose();
   }

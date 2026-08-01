@@ -26,12 +26,19 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.ticketId != null) {
-      _activeTicketId = widget.ticketId;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        context.read<HelpProvider>().loadChatMessages(widget.ticketId!);
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final hp = context.read<HelpProvider>();
+      if (widget.ticketId != null) {
+        _activeTicketId = widget.ticketId;
+        hp.loadChatMessages(widget.ticketId!);
+      }
+      // Load tickets so the start screen can show recent ones
+      final auth = context.read<AuthProvider>();
+      final userId = auth.user?.uid;
+      if (userId != null) {
+        hp.loadTickets(userId);
+      }
+    });
   }
 
   @override
@@ -359,13 +366,26 @@ class _LiveChatScreenState extends State<LiveChatScreen> {
     final userName = auth.user?.fullName ?? 'User';
     if (userId == null) return;
 
+    _messageController.clear();
+
+    // Send asynchronously — errors are handled inside sendChatMessage
     hp.sendChatMessage(
       ticketId: _activeTicketId!,
+      ticketUserId: userId,
       userId: userId,
       userName: userName,
       text: text,
-    );
-    _messageController.clear();
+    ).then((_) {
+      if (mounted && hp.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(hp.errorMessage!),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    });
   }
 
   Widget _buildMessageBubble(ChatMessageEntity msg, bool isDark, ThemeData theme) {

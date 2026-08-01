@@ -533,7 +533,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         Text(
                           project.title,
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : const Color(0xFF0F172A),
                           ),
@@ -544,13 +544,14 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                         Text(
                           project.description,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             color: isDark
                                 ? AppTheme.textSecondary
                                 : const Color(0xFF64748B),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                          softWrap: true,
                         ),
                       ],
                     ),
@@ -566,7 +567,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
                     child: Text(
                       project.rewardText,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF22C55E),
                       ),

@@ -44,6 +44,9 @@ class WalletProvider extends ChangeNotifier {
   double _monthlyTotal = 0.0;
   bool _isHistoryLoading = false;
 
+  /// Prevents notifyListeners() after dispose.
+  bool _disposed = false;
+
   WalletProvider({
     required WalletRepository walletRepository,
     RewardRepository? rewardRepository,
@@ -72,16 +75,26 @@ class WalletProvider extends ChangeNotifier {
   double get monthlyTotal => _monthlyTotal;
   bool get isHistoryLoading => _isHistoryLoading;
 
+  void _safeNotifyListeners() {
+    if (_disposed) return;
+    try {
+      notifyListeners();
+    } catch (_) {}
+  }
+
   void listenToWallet(String userId) {
+    if (_disposed) return;
     _walletSubscription?.cancel();
     _walletSubscription = _walletRepository.streamWallet(userId).listen(
       (wallet) {
+        if (_disposed) return;
         _wallet = wallet;
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         _errorMessage = error.toString();
-        notifyListeners();
+        _safeNotifyListeners();
       },
     );
 
@@ -89,12 +102,14 @@ class WalletProvider extends ChangeNotifier {
     _transactionsSubscription =
         _walletRepository.streamRecentTransactions(userId).listen(
       (transactions) {
+        if (_disposed) return;
         _recentTransactions = transactions;
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         _errorMessage = error.toString();
-        notifyListeners();
+        _safeNotifyListeners();
       },
     );
   }
@@ -146,7 +161,7 @@ class WalletProvider extends ChangeNotifier {
           ),
         );
         _wallet = WalletEntity(userId: userId, updatedAt: DateTime.now());
-        notifyListeners();
+        _safeNotifyListeners();
         return true;
       } catch (e) {
         _clearError();
@@ -177,9 +192,10 @@ class WalletProvider extends ChangeNotifier {
 
   /// Load earnings breakdown from Firestore (projects, referrals, spin)
   Future<void> loadEarningsBreakdown(String userId) async {
+    if (_disposed) return;
     _clearError();
     _isBreakdownLoading = true;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       // 1. Projects earnings (from rewards count with taskReward type)
@@ -216,15 +232,16 @@ class WalletProvider extends ChangeNotifier {
       }
     } finally {
       _isBreakdownLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   /// Load full earnings history for charting (daily, weekly, monthly + breakdown)
   Future<void> loadEarningsHistory(String userId) async {
+    if (_disposed) return;
     _clearError();
     _isHistoryLoading = true;
-    notifyListeners();
+    _safeNotifyListeners();
 
     try {
       // Fetch all rewards for this user
@@ -326,7 +343,7 @@ class WalletProvider extends ChangeNotifier {
       // Silently fail — charts will show empty state
     } finally {
       _isHistoryLoading = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -358,17 +375,20 @@ class WalletProvider extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_disposed) return;
     _isLoading = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _clearError() {
+    if (_disposed) return;
     _errorMessage = null;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     cancelSubscriptions();
     super.dispose();
   }

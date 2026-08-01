@@ -33,6 +33,10 @@ class UserModel extends UserEntity {
     super.portfolioLinks = const [],
     super.resumeUrl,
     super.certificateUrl,
+    super.upiQrCodeUrl,
+    super.qrCodeUploadedAt,
+    super.qrCodeUpdatedAt,
+    super.qrCodeUploadedBy,
     super.isVerified = false,
     super.profileCompletionPercentage = 0,
   });
@@ -70,6 +74,10 @@ class UserModel extends UserEntity {
       portfolioLinks: entity.portfolioLinks,
       resumeUrl: entity.resumeUrl,
       certificateUrl: entity.certificateUrl,
+      upiQrCodeUrl: entity.upiQrCodeUrl,
+      qrCodeUploadedAt: entity.qrCodeUploadedAt,
+      qrCodeUpdatedAt: entity.qrCodeUpdatedAt,
+      qrCodeUploadedBy: entity.qrCodeUploadedBy,
       isVerified: entity.isVerified,
       profileCompletionPercentage: entity.profileCompletionPercentage,
     );
@@ -113,6 +121,14 @@ class UserModel extends UserEntity {
       resumeUrl: map['resumeUrl'] as String?,
       certificateUrl: map['certificateUrl'] as String?,
       isVerified: map['isVerified'] as bool? ?? false,
+      upiQrCodeUrl: map['upiQrCodeUrl'] as String?,
+      qrCodeUploadedAt: (map['qrCodeUploadedAt'] as dynamic) != null
+          ? (map['qrCodeUploadedAt'] as dynamic).toDate() as DateTime
+          : null,
+      qrCodeUpdatedAt: (map['qrCodeUpdatedAt'] as dynamic) != null
+          ? (map['qrCodeUpdatedAt'] as dynamic).toDate() as DateTime
+          : null,
+      qrCodeUploadedBy: map['qrCodeUploadedBy'] as String?,
       profileCompletionPercentage: (map['profileCompletionPercentage'] as num?)?.toInt() ?? 0,
     );
   }
@@ -147,6 +163,10 @@ class UserModel extends UserEntity {
       if (portfolioLinks.isNotEmpty) 'portfolioLinks': portfolioLinks,
       if (resumeUrl != null) 'resumeUrl': resumeUrl,
       if (certificateUrl != null) 'certificateUrl': certificateUrl,
+      if (upiQrCodeUrl != null) 'upiQrCodeUrl': upiQrCodeUrl,
+      if (qrCodeUploadedAt != null) 'qrCodeUploadedAt': qrCodeUploadedAt,
+      if (qrCodeUpdatedAt != null) 'qrCodeUpdatedAt': qrCodeUpdatedAt,
+      if (qrCodeUploadedBy != null) 'qrCodeUploadedBy': qrCodeUploadedBy,
       'isVerified': isVerified,
       'profileCompletionPercentage': profileCompletionPercentage,
     };
@@ -184,6 +204,10 @@ class UserModel extends UserEntity {
     List<String>? portfolioLinks,
     String? resumeUrl,
     String? certificateUrl,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
     bool? isVerified,
     int? profileCompletionPercentage,
   }) {
@@ -219,6 +243,10 @@ class UserModel extends UserEntity {
       portfolioLinks: portfolioLinks ?? this.portfolioLinks,
       resumeUrl: resumeUrl ?? this.resumeUrl,
       certificateUrl: certificateUrl ?? this.certificateUrl,
+      upiQrCodeUrl: upiQrCodeUrl ?? this.upiQrCodeUrl,
+      qrCodeUploadedAt: qrCodeUploadedAt ?? this.qrCodeUploadedAt,
+      qrCodeUpdatedAt: qrCodeUpdatedAt ?? this.qrCodeUpdatedAt,
+      qrCodeUploadedBy: qrCodeUploadedBy ?? this.qrCodeUploadedBy,
       isVerified: isVerified ?? this.isVerified,
       profileCompletionPercentage: profileCompletionPercentage ?? this.profileCompletionPercentage,
     );

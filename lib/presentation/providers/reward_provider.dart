@@ -44,6 +44,9 @@ class RewardProvider extends ChangeNotifier {
   bool _isRecoveringWeekly = false;
   bool _isRecoveringMonthly = false;
 
+  /// Prevents notifyListeners() after dispose.
+  bool _disposed = false;
+
   RewardProvider({
     required RewardRepository rewardRepository,
   }) : _rewardRepository = rewardRepository;
@@ -145,20 +148,31 @@ class RewardProvider extends ChangeNotifier {
   }
 
   Future<void> loadAdStats(String userId) async {
+    if (_disposed) return;
     await _loadAdStats(userId);
-    notifyListeners();
+    _safeNotifyListeners();
+  }
+
+  void _safeNotifyListeners() {
+    if (_disposed) return;
+    try {
+      notifyListeners();
+    } catch (_) {}
   }
 
   void _listenToStreak(String userId) {
+    if (_disposed) return;
     _streakSubscription?.cancel();
     _streakSubscription = _rewardRepository.streamStreak(userId).listen(
       (streak) {
+        if (_disposed) return;
         _streak = streak;
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         _errorMessage = error.toString();
-        notifyListeners();
+        _safeNotifyListeners();
       },
     );
   }
@@ -175,7 +189,7 @@ class RewardProvider extends ChangeNotifier {
       final now = DateTime.now();
       final monthKey = '${now.year}-${now.month.toString().padLeft(2, '0')}';
       _monthlyBonus = await _rewardRepository.getMonthlyBonus(userId, monthKey);
-      notifyListeners();
+      _safeNotifyListeners();
     } on RewardsException catch (e) {
       _errorMessage = e.message;
     } on FirestoreException catch (e) {
@@ -194,7 +208,7 @@ class RewardProvider extends ChangeNotifier {
       final reward = await _rewardRepository.claimAdReward(userId);
       _lastAdEarnedAmount = reward.rewardAmount;
       await _loadAdStats(userId);
-      notifyListeners();
+      _safeNotifyListeners();
       return _lastAdEarnedAmount;
     } on RewardsException catch (e) {
       _errorMessage = e.message;
@@ -213,9 +227,8 @@ class RewardProvider extends ChangeNotifier {
   // ─── Weekly Bonus ─────────────────────────────────────
 
   Future<bool> claimWeeklyBonus(String userId) async {
-    if (_isClaimingWeekly || !canClaimWeekly) return false;
-    _isClaimingWeekly = true;
-    notifyListeners();
+    if (_isClaimingWeekly || !canClaimWeekly) return false;      _isClaimingWeekly = true;
+      _safeNotifyListeners();
     try {
       final rewardAmount = 15.0;
 
@@ -247,24 +260,23 @@ class RewardProvider extends ChangeNotifier {
         _weeklyBonus = freshWeekly;
       }
 
-      notifyListeners();
+      _safeNotifyListeners();
       return true;
     } catch (e) {
       _errorMessage = 'Failed to claim weekly bonus';
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     } finally {
       _isClaimingWeekly = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
   // ─── Monthly Bonus ────────────────────────────────────
 
   Future<bool> claimMonthlyBonus(String userId) async {
-    if (_isClaimingMonthly || !canClaimMonthly) return false;
-    _isClaimingMonthly = true;
-    notifyListeners();
+    if (_isClaimingMonthly || !canClaimMonthly) return false;      _isClaimingMonthly = true;
+      _safeNotifyListeners();
     try {
       final rewardAmount = 40.0;
 
@@ -284,15 +296,15 @@ class RewardProvider extends ChangeNotifier {
         _monthlyBonus = updated;
       }
 
-      notifyListeners();
+      _safeNotifyListeners();
       return true;
     } catch (e) {
       _errorMessage = 'Failed to claim monthly bonus';
-      notifyListeners();
+      _safeNotifyListeners();
       return false;
     } finally {
       _isClaimingMonthly = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -302,7 +314,7 @@ class RewardProvider extends ChangeNotifier {
   Future<bool> recoverWeeklyStreak(String userId) async {
     if (_isRecoveringWeekly || !canRecoverWeekly) return false;
     _isRecoveringWeekly = true;
-    notifyListeners();
+    _safeNotifyListeners();
     try {
       final success = await _rewardRepository.recoverWeeklyStreak(userId);
       if (success) {
@@ -315,7 +327,7 @@ class RewardProvider extends ChangeNotifier {
       return false;
     } finally {
       _isRecoveringWeekly = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -323,7 +335,7 @@ class RewardProvider extends ChangeNotifier {
   Future<bool> recoverMonthlyStreak(String userId) async {
     if (_isRecoveringMonthly || !canRecoverMonthly) return false;
     _isRecoveringMonthly = true;
-    notifyListeners();
+    _safeNotifyListeners();
     try {
       final success = await _rewardRepository.recoverMonthlyStreak(userId);
       if (success) {
@@ -338,7 +350,7 @@ class RewardProvider extends ChangeNotifier {
       return false;
     } finally {
       _isRecoveringMonthly = false;
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -358,7 +370,7 @@ class RewardProvider extends ChangeNotifier {
       await _rewardRepository.saveSpinData(data);
     } catch (e) {
       _errorMessage = 'Failed to save spin data';
-      notifyListeners();
+      _safeNotifyListeners();
     }
   }
 
@@ -368,26 +380,32 @@ class RewardProvider extends ChangeNotifier {
   }
 
   void _listenToWeeklyBonus(String userId) {
+    if (_disposed) return;
     _weeklyBonusSubscription?.cancel();
     _weeklyBonusSubscription = _rewardRepository.streamWeeklyBonus(userId).listen(
       (bonus) {
+        if (_disposed) return;
         _weeklyBonus = bonus;
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         debugPrint('Weekly bonus stream error: $error');
       },
     );
   }
 
   void _listenToMonthlyBonus(String userId) {
+    if (_disposed) return;
     _monthlyBonusSubscription?.cancel();
     _monthlyBonusSubscription = _rewardRepository.streamMonthlyBonus(userId).listen(
       (bonus) {
+        if (_disposed) return;
         _monthlyBonus = bonus;
-        notifyListeners();
+        _safeNotifyListeners();
       },
       onError: (error) {
+        if (_disposed) return;
         debugPrint('Monthly bonus stream error: $error');
       },
     );
@@ -452,22 +470,26 @@ class RewardProvider extends ChangeNotifier {
   }
 
   void _setLoading(bool value) {
+    if (_disposed) return;
     _isLoading = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _setClaiming(bool value) {
+    if (_disposed) return;
     _isClaimingReward = value;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   void _clearError() {
+    if (_disposed) return;
     _errorMessage = null;
-    notifyListeners();
+    _safeNotifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     cancelSubscriptions();
     super.dispose();
   }

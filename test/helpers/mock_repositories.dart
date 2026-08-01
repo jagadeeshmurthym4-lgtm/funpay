@@ -122,6 +122,10 @@ class MockAuthRepository implements AuthRepository {
     List<String>? portfolioLinks,
     String? profilePicture,
     String? coverImage,
+    String? upiQrCodeUrl,
+    DateTime? qrCodeUploadedAt,
+    DateTime? qrCodeUpdatedAt,
+    String? qrCodeUploadedBy,
   }) async {
     if (_mockUser == null) throw Exception('Not authenticated');
     _mockUser = _mockUser!.copyWith(
@@ -140,6 +144,10 @@ class MockAuthRepository implements AuthRepository {
       portfolioLinks: portfolioLinks ?? _mockUser!.portfolioLinks,
       profilePicture: profilePicture ?? _mockUser!.profilePicture,
       coverImage: coverImage ?? _mockUser!.coverImage,
+      upiQrCodeUrl: upiQrCodeUrl ?? _mockUser!.upiQrCodeUrl,
+      qrCodeUploadedAt: qrCodeUploadedAt ?? _mockUser!.qrCodeUploadedAt,
+      qrCodeUpdatedAt: qrCodeUpdatedAt ?? _mockUser!.qrCodeUpdatedAt,
+      qrCodeUploadedBy: qrCodeUploadedBy ?? _mockUser!.qrCodeUploadedBy,
     );
     return _mockUser!;
   }
@@ -467,6 +475,10 @@ class MockWalletRepository implements WalletRepository {
 class MockAdminRepository implements AdminRepository {
   bool _shouldThrow = false;
   int _totalUsers = 0;
+  List<ReferralEntity> _referrals = [];
+
+  /// Records every creditUserWallet invocation as {userId, amount, description}.
+  final List<Map<String, dynamic>> creditCalls = [];
 
   void setShouldThrow(bool shouldThrow) {
     _shouldThrow = shouldThrow;
@@ -474,6 +486,10 @@ class MockAdminRepository implements AdminRepository {
 
   void setTotalUsers(int count) {
     _totalUsers = count;
+  }
+
+  void setReferrals(List<ReferralEntity> referrals) {
+    _referrals = referrals;
   }
 
   @override
@@ -543,6 +559,11 @@ class MockAdminRepository implements AdminRepository {
     required String description,
   }) async {
     if (_shouldThrow) throw Exception('Failed to credit wallet');
+    creditCalls.add({
+      'userId': userId,
+      'amount': amount,
+      'description': description,
+    });
   }
 
   @override
@@ -555,7 +576,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<List<ReferralEntity>> getAllReferrals({int limit = 50}) async => [];
+  Future<List<ReferralEntity>> getAllReferrals({int limit = 50}) async =>
+      _referrals;
 
   @override
   Future<void> disableReferralSystem() async {}
