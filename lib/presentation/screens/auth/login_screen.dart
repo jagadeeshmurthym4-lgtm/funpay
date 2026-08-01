@@ -180,7 +180,29 @@ class _LoginScreenState extends State<LoginScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          SizedBox(height: size.height * 0.03),
+                          SizedBox(height: size.height * 0.02),
+
+                          // ── Back to Home ──────────────────────
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: IconButton(
+                              onPressed: () {
+                                if (Navigator.of(context).canPop()) {
+                                  Navigator.of(context).maybePop();
+                                } else {
+                                  Navigator.of(context).pushReplacementNamed(
+                                    AppRouter.landing,
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 18,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              tooltip: 'Back to Home',
+                            ),
+                          ),
 
                           // ── Logo ──────────────────────────────
                           Center(

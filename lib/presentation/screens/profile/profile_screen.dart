@@ -356,7 +356,7 @@ class ProfileScreen extends StatelessWidget {
                                   await auth.signOut();
                                   if (context.mounted) {
                                     Navigator.of(context).pushNamedAndRemoveUntil(
-                                      AppRouter.login,
+                                      AppRouter.landing,
                                       (route) => false,
                                     );
                                   }

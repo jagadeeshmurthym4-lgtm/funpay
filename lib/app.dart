@@ -48,7 +48,7 @@ class _FunPayAppState extends State<FunPayApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _onUnauthenticated(_lastUserId);
         Navigator.of(context).pushNamedAndRemoveUntil(
-          AppRouter.login,
+          AppRouter.landing,
           (route) => false,
         );
       });

@@ -303,7 +303,7 @@ class AccountManagementScreen extends StatelessWidget {
         await auth.deleteAccount();
         if (context.mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil(
-            AppRouter.login,
+            AppRouter.landing,
             (route) => false,
           );
         }

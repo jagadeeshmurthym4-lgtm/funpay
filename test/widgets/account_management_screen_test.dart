@@ -17,6 +17,9 @@ Widget createTestApp(AuthProvider authProvider) {
     child: MaterialApp(
       home: const AccountManagementScreen(),
       routes: {
+        AppRouter.landing: (_) => const Scaffold(
+              body: Center(child: Text('Landing Screen Stub')),
+            ),
         AppRouter.login: (_) => const Scaffold(
               body: Center(child: Text('Login Screen Stub')),
             ),
@@ -100,7 +103,7 @@ void main() {
       expect(find.text('Are you absolutely sure?'), findsNothing);
     });
 
-    testWidgets('confirming deletion deletes account and navigates to login',
+    testWidgets('confirming deletion deletes account and navigates to landing',
         (tester) async {
       await tester.pumpWidget(createTestApp(authProvider));
       await tester.pumpAndSettle();
@@ -113,8 +116,8 @@ void main() {
       await tester.tap(find.text('Delete'));
       await tester.pumpAndSettle();
 
-      // Should navigate to login screen
-      expect(find.text('Login Screen Stub'), findsOneWidget);
+      // Should navigate to the public landing screen
+      expect(find.text('Landing Screen Stub'), findsOneWidget);
       // Auth state should be unauthenticated
       expect(authProvider.isAuthenticated, false);
       expect(authProvider.user, isNull);

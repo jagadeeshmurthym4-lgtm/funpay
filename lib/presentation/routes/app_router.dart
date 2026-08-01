@@ -13,6 +13,7 @@ import 'package:cashspark/presentation/screens/referral/referral_dashboard_scree
 import 'package:cashspark/presentation/screens/referral/referral_levels_screen.dart';
 import 'package:cashspark/presentation/screens/rewards/rewards_screen.dart';
 import 'package:cashspark/presentation/screens/splash/splash_screen.dart';
+import 'package:cashspark/presentation/screens/landing/landing_screen.dart';
 import 'package:cashspark/presentation/screens/wallet/transaction_detail_screen.dart';
 import 'package:cashspark/presentation/screens/wallet/wallet_dashboard_screen.dart';
 import 'package:cashspark/presentation/screens/admin/admin_dashboard_screen.dart';
@@ -43,6 +44,7 @@ import 'package:flutter/material.dart';
 
 class AppRouter {
   static const String splash = '/';
+  static const String landing = '/landing';
   static const String login = '/login';
   static const String home = '/home';
   static const String profile = '/profile';
@@ -89,6 +91,11 @@ class AppRouter {
       case splash:
         return MaterialPageRoute(
           builder: (_) => const SplashScreen(),
+          settings: settings,
+        );
+      case landing:
+        return MaterialPageRoute(
+          builder: (_) => const LandingScreen(),
           settings: settings,
         );
       case login:

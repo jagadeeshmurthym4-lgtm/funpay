@@ -68,7 +68,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (_authProvider!.isAuthenticated) {
         await _showAppOpenAndNavigate();
       } else {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/landing');
       }
       return;
     }
@@ -83,7 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
         if (_authProvider!.isAuthenticated) {
           await _showAppOpenAndNavigate();
         } else {
-          Navigator.pushReplacementNamed(context, '/login');
+          Navigator.pushReplacementNamed(context, '/landing');
         }
       }
     };
@@ -93,7 +93,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted || resolved) return;
       resolved = true;
       _authProvider!.removeListener(_authListener!);
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/landing');
     });
   }
 
@@ -127,7 +127,7 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.pushReplacementNamed(context, '/home');
       }
     } else {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, '/landing');
     }
   }
 
