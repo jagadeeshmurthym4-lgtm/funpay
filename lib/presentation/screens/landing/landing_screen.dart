@@ -1,5 +1,6 @@
 import 'package:cashspark/core/theme/app_theme.dart';
 import 'package:cashspark/core/utils/responsive.dart';
+import 'package:cashspark/core/widgets/adsense_banner.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/presentation/routes/app_router.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,7 @@ class LandingScreen extends StatelessWidget {
               _buildHeader(context, isDark),
               _buildHero(context, isDark),
               _buildStatsStrip(context, isDark),
+              const AdSenseBanner(adSlot: '6222511573', height: 110),
               _buildFeatures(context, isDark),
               _buildHowItWorks(context, isDark),
               _buildFaq(context, isDark),

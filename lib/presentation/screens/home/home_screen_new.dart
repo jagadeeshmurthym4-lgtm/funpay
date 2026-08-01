@@ -1,4 +1,5 @@
 import 'package:cashspark/core/theme/app_theme.dart';
+import 'package:cashspark/core/widgets/adsense_banner.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/domain/entities/notification_entity.dart';
 import 'package:cashspark/presentation/providers/auth_provider.dart';
@@ -67,6 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildWalletCard(isDark),
               SizedBox(height: rs.spaceMd),
               _buildWithdrawButton(isDark),
+              SizedBox(height: rs.spaceLg),
+              const AdSenseBanner(adSlot: '6222511573', height: 110),
               SizedBox(height: rs.spaceLg),
               _buildRecentNotifications(isDark),
             ],
