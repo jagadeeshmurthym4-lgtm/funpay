@@ -9,19 +9,28 @@ rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
-subprojects {
-    project.evaluationDependsOn(":app")
-}
 
-// Force all projects to compile against API 36 for targetSdk compliance
-allprojects {
-    project.plugins.whenPluginAdded { plugin ->
-        if (plugin.class.name.contains('com.android.build.gradle.BasePlugin') ||
-            plugin.class.name.contains('com.android.build.gradle.AppPlugin') ||
-            plugin.class.name.contains('com.android.build.gradle.LibraryPlugin')) {
-            project.android.compileSdk = 36
+// Force all projects to compile against API 36 for targetSdk compliance.
+//
+// This MUST be registered BEFORE `subprojects { project.evaluationDependsOn(":app") }`
+// below: that call forces :app to evaluate early, and calling afterEvaluate on an
+// already-evaluated project throws. Registering first means the callback fires after
+// each module's own android { } block completes, so plugin defaults (e.g.
+// connectivity_plus compiles against android-35 while its androidx.core 1.18.0
+// dependency requires 36) can no longer overwrite the override.
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin('com.android.application') ||
+            project.plugins.hasPlugin('com.android.library')) {
+            project.android {
+                compileSdk 36
+            }
         }
     }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
 }
 
 tasks.register("clean", Delete) {
