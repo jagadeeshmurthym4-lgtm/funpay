@@ -77,6 +77,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Diagnose environment (helpful when the build fails)
+        run: |
+          flutter doctor -v
+          echo "--- Android SDK root: $ANDROID_SDK_ROOT ---"
+          ls -1 "$ANDROID_SDK_ROOT/ndk" 2>/dev/null || echo "no NDK dir found"
+          echo "--- free memory ---"
+          free -h
+
       - name: Build APK
         run: flutter build apk --release --split-per-abi
 

@@ -8,7 +8,9 @@ plugins {
 android {
     namespace = "com.spydev.funpay"
     compileSdk = 36
-    ndkVersion = "27.0.12077973" // Hardcoded to match plugin requirements (flutter.ndkVersion resolves to 26.x causing warnings)
+    // Use the Flutter-default NDK (resolves to the version pre-installed on GitHub Actions
+    // runners) instead of a hardcoded 27.x pin, which forced a large NDK download on CI.
+    // (The pin previously only silenced a warning about flutter.ndkVersion resolving to 26.x.)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
