@@ -34,9 +34,10 @@ jobs:
         run: |
           cp -r hosting/.well-known build/web/.well-known
 
-      - name: Copy AdSense verification files (ads.txt, robots.txt)
+      - name: Copy AdSense & AdMob verification files (ads.txt, app-ads.txt, robots.txt)
         run: |
           cp web/ads.txt build/web/ads.txt
+          cp web/app-ads.txt build/web/app-ads.txt
           cp web/robots.txt build/web/robots.txt
 
       - name: Add 404.html for deep-link refresh support

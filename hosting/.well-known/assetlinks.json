@@ -1,10 +1,16 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "com.spydev.funpay",
-    "sha256_cert_fingerprints": [
-      "5B:D1:CC:E0:A0:7C:76:00:7D:82:89:D5:7F:41:05:DD:FC:B0:8B:41:EA:9C:8E:17:46:D2:D8:69:BD:42:D3:B3"
-    ]
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.spydev.funpay",
+      "sha256_cert_fingerprints": [
+        "5B:D1:CC:E0:A0:7C:76:00:7D:82:89:D5:7F:41:05:DD:FC:B0:8B:41:EA:9C:8E:17:46:D2:D8:69:BD:42:D3:B3",
+        "66:99:E3:42:2F:D0:3F:3E:CA:15:3E:C3:D6:92:57:81:27:2D:22:C4:16:5D:E7:BF:AB:CA:C1:E7:4D:DC:16:FC"
+      ]
+    }
   }
-}]
+]
