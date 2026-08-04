@@ -176,17 +176,17 @@ class MoreScreen extends StatelessWidget {
         child: Row(
           children: [
             _miniStat(Icons.account_balance_wallet_outlined, 'Balance',
-                '${(walletProv.wallet?.walletBalance ?? 0).toStringAsFixed(0)} pts',
+                '₹${(walletProv.wallet?.walletBalance ?? 0).toStringAsFixed(0)}',
                 AppTheme.accentGreen, isDark),
             Container(height: 32, width: 1,
                 color: isDark ? AppTheme.borderColor : const Color(0xFFCBD5E1)),
             _miniStat(Icons.trending_up_outlined, 'Earnings',
-                '${(walletProv.wallet?.totalEarnings ?? 0).toStringAsFixed(0)} pts',
+                '₹${(walletProv.wallet?.totalEarnings ?? 0).toStringAsFixed(0)}',
                 AppTheme.accentPurple, isDark),
             Container(height: 32, width: 1,
                 color: isDark ? AppTheme.borderColor : const Color(0xFFCBD5E1)),
             _miniStat(Icons.people_outline, 'Ref. Earnings',
-                '${walletProv.referralEarnings.toStringAsFixed(0)} pts',
+                '₹${walletProv.referralEarnings.toStringAsFixed(0)}',
                 AppTheme.accentOrange, isDark),
           ],
         ),
@@ -245,7 +245,7 @@ class MoreScreen extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(child: _refStat('Referrals', '${refProv.referralCount}', AppTheme.accentBlue, isDark)),
-                    Expanded(child: _refStat('Earned', '${refProv.totalEarnings.toStringAsFixed(0)} pts', AppTheme.accentGreen, isDark)),
+                    Expanded(child: _refStat('Earned', '₹${refProv.totalEarnings.toStringAsFixed(0)}', AppTheme.accentGreen, isDark)),
                     Expanded(child: _refStat('Completed', '${refProv.completedProjectUsers}', AppTheme.accentOrange, isDark)),
                   ],
                 ),
@@ -275,7 +275,7 @@ class MoreScreen extends StatelessWidget {
     final items = [
       _MenuItem(Icons.notifications_outlined, 'Notifications', AppRouter.notifications, badge: unreadCount),
       _MenuItem(Icons.account_balance_wallet_outlined, 'Wallet', null),
-      _MenuItem(Icons.redeem_rounded, 'Redeem Points', AppRouter.withdrawals),
+      _MenuItem(Icons.redeem_rounded, 'Redeem Rewards', AppRouter.withdrawals),
       _MenuItem(Icons.person_add_outlined, 'Referrals', AppRouter.referrals),
       _MenuItem(Icons.settings_outlined, 'Settings', AppRouter.appSettings),
       _MenuItem(Icons.account_circle_outlined, 'Account', AppRouter.accountManagement),

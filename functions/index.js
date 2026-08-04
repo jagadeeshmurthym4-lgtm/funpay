@@ -561,3 +561,31 @@ exports.sendTargetedPush = functions.https.onCall(async (data, context) => {
     );
   }
 });
+
+// =====================================================
+// CPX Research Offer Wall — S2S Postback + Reward Callback
+// =====================================================
+
+const { handleCpxPostback } = require('./cpx');
+
+/**
+ * HTTPS endpoint for CPX Research (offer wall surveys).
+ *
+ * Configure this URL in the CPX Research publisher dashboard
+ * (Postback Settings tab):
+ *
+ *   https://us-central1-cashspark-c15bd.cloudfunctions.net/cpxPostback
+ *
+ * All logic lives in ./cpx.js (unit-tested in test/cpx_postback.test.js);
+ * this wrapper only wires in the Firestore instance, Functions config, and FCM.
+ */
+exports.cpxPostback = functions.https.onRequest(async (req, res) => {
+  const result = await handleCpxPostback({
+    req,
+    db,
+    getConfig: () => functions.config(),
+    fieldValue: admin.firestore.FieldValue,
+    messaging: admin.messaging(),
+  });
+  return res.status(result.statusCode).send(result.body);
+});

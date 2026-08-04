@@ -56,6 +56,7 @@ import 'package:cashspark/presentation/providers/scratch_card_provider.dart';
 import 'package:cashspark/presentation/providers/coupon_provider.dart';
 import 'package:cashspark/presentation/providers/help_provider.dart';
 import 'package:cashspark/presentation/providers/search_provider.dart';
+import 'package:cashspark/presentation/providers/cpx_provider.dart';
 import 'package:cashspark/presentation/providers/notification_provider.dart';
 import 'package:cashspark/services/admob_service.dart';
 import 'package:cashspark/services/cloudinary_service.dart';
@@ -299,6 +300,9 @@ void main() async {
             ),
             ChangeNotifierProvider(
               create: (_) => StreakMultiplierProvider(repository: streakMultiplierRepository),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => CpxProvider(),
             ),
           ],
           child: const FunPayApp(),

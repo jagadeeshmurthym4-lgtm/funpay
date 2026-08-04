@@ -132,7 +132,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         throw WithdrawalException('Wallet not found');
       }
       if (wallet.walletBalance < amount) {
-        throw WithdrawalException('Insufficient points');
+        throw WithdrawalException('Insufficient balance');
       }
 
       final withdrawal = WithdrawalModel(
@@ -156,13 +156,13 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       await _createNotification(
         userId: userId,
         title: '📤 Redemption Submitted',
-        message: 'Your redemption request of ${amount.toStringAsFixed(2)} pts has been submitted and is pending review.',
+        message: 'Your redemption request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: userId,
         title: '📤 Redemption Submitted',
-        message: 'Your redemption request of ${amount.toStringAsFixed(2)} pts has been submitted and is pending review.',
+        message: 'Your redemption request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
         type: 'withdrawal',
       );
 
@@ -216,7 +216,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   }) async {
     if (amount < minRedemptionAmount) {
       throw WithdrawalException(
-          'Minimum redemption is ${minRedemptionAmount.toStringAsFixed(2)} pts');
+          'Minimum redemption is ₹${minRedemptionAmount.toStringAsFixed(2)}');
     }
   }
 
@@ -281,7 +281,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         source: TransactionSource.withdrawal,
         status: TransactionStatus.completed,
         description:
-            'Redemption of ${existing.amount.toStringAsFixed(2)} pts for ${existing.method.name}',
+            'Redemption of ₹${existing.amount.toStringAsFixed(2)} for ${existing.method.name}',
         createdAt: DateTime.now(),
       );
       await _walletDataSource.createTransaction(transaction);
@@ -361,7 +361,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
           source: TransactionSource.withdrawal,
           status: TransactionStatus.completed,
           description:
-              'Withdrawal of ${existing.amount.toStringAsFixed(2)} pts via ${existing.method.name}',
+              'Withdrawal of ₹${existing.amount.toStringAsFixed(2)} via ${existing.method.name}',
           createdAt: DateTime.now(),
         );
         await _walletDataSource.createTransaction(transaction);
@@ -391,13 +391,13 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       await _createNotification(
         userId: existing.userId,
         title: '✅ Redemption Approved',
-        message: 'Your redemption request of ${existing.amount.toStringAsFixed(2)} pts has been approved and granted to your account.',
+        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} has been approved and granted to your account.',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: existing.userId,
         title: '✅ Redemption Approved',
-        message: 'Your redemption request of ${existing.amount.toStringAsFixed(2)} pts has been approved and granted to your account.',
+        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} has been approved and granted to your account.',
         type: 'withdrawal',
       );
 
@@ -448,13 +448,13 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       await _createNotification(
         userId: existing.userId,
         title: '❌ Redemption Rejected',
-        message: 'Your redemption request of ${existing.amount.toStringAsFixed(2)} pts was rejected. Reason: $remarks',
+        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: existing.userId,
         title: '❌ Redemption Rejected',
-        message: 'Your redemption request of ${existing.amount.toStringAsFixed(2)} pts was rejected. Reason: $remarks',
+        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
         type: 'withdrawal',
       );
 

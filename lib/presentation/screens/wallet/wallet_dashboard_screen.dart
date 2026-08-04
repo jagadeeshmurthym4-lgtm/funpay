@@ -123,7 +123,7 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('pts',
+                          const Text('₹',
                               style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w600,
@@ -452,7 +452,7 @@ class _TransactionCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                    '${isCredit ? '+' : '-'}${txn.amount.toStringAsFixed(2)} pts',
+                    '${isCredit ? '+' : '-'}₹${txn.amount.toStringAsFixed(2)}',
                     style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 15,
@@ -485,6 +485,8 @@ class _TransactionCard extends StatelessWidget {
         return 'Reward';
       case TransactionSource.purchase:
         return 'Purchase';
+      case TransactionSource.offerwall:
+        return 'Survey Reward';
       case TransactionSource.other:
         return 'Transaction';
     }

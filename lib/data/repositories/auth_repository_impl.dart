@@ -243,7 +243,7 @@ class AuthRepositoryImpl implements AuthRepository {
             await _referralDataSource.createReferral(referral);
 
             // ─── Immediate Sign-up Bonus ─────────────────────
-            // Credit 4 pts to the referred user's wallet immediately
+            // Credit ₹4 to the referred user's wallet immediately
             try {
               await _walletDataSource.updateWalletBalance(
                 userId: uid,
@@ -260,7 +260,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 amount: 4.0,
                 source: TransactionSource.referral,
                 status: TransactionStatus.completed,
-                description: 'Welcome bonus: 4 pts for using a referral code!',
+                description: 'Welcome bonus: ₹4 for using a referral code!',
                 createdAt: DateTime.now(),
               );
               await _walletDataSource.createTransaction(txn);
@@ -279,12 +279,12 @@ class AuthRepositoryImpl implements AuthRepository {
               debugPrint('Failed to credit referred user welcome bonus: $e');
             }
 
-            // ─── Referrer 10 pts Sign-up Bonus ──────────────────
+            // ─── Referrer ₹10 Sign-up Bonus ──────────────────
             // Each write is wrapped in its own try/catch so a failure in one
             // (e.g. transaction/reward creation denied by Firestore rules)
             // doesn't prevent the credit or guard flag from being set.
 
-            // Step 1: Credit 10 pts to referrer's wallet (via _referralId rule)
+            // Step 1: Credit ₹10 to referrer's wallet (via _referralId rule)
             try {
               await _walletDataSource.creditReferralSignupBonus(
                 referrerUserId: referrerUser.uid,
@@ -303,7 +303,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 amount: 10.0,
                 source: TransactionSource.referral,
                 status: TransactionStatus.completed,
-                description: 'Sign-up bonus: 10 pts for referring a new user!',
+                description: 'Sign-up bonus: ₹10 for referring a new user!',
                 createdAt: DateTime.now(),
               );
               await _walletDataSource.createTransaction(referrerTxn);
@@ -799,7 +799,7 @@ class AuthRepositoryImpl implements AuthRepository {
             await _referralDataSource.createReferral(referral);
 
             // ─── Immediate Sign-up Bonus ─────────────────────
-            // Credit 4 pts to the referred user's wallet immediately
+            // Credit ₹4 to the referred user's wallet immediately
             try {
               await _walletDataSource.updateWalletBalance(
                 userId: uid,
@@ -816,7 +816,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 amount: 4.0,
                 source: TransactionSource.referral,
                 status: TransactionStatus.completed,
-                description: 'Welcome bonus: 4 pts for using a referral code!',
+                description: 'Welcome bonus: ₹4 for using a referral code!',
                 createdAt: DateTime.now(),
               );
               await _walletDataSource.createTransaction(txn);
@@ -835,12 +835,12 @@ class AuthRepositoryImpl implements AuthRepository {
               debugPrint('Failed to credit referred user welcome bonus: $e');
             }
 
-            // ─── Referrer 10 pts Sign-up Bonus ──────────────────
+            // ─── Referrer ₹10 Sign-up Bonus ──────────────────
             // Each write is wrapped in its own try/catch so a failure in one
             // (e.g. transaction/reward creation denied by Firestore rules)
             // doesn't prevent the credit or guard flag from being set.
 
-            // Step 1: Credit 10 pts to referrer's wallet (via _referralId rule)
+            // Step 1: Credit ₹10 to referrer's wallet (via _referralId rule)
             try {
               await _walletDataSource.creditReferralSignupBonus(
                 referrerUserId: referrerUser.uid,
@@ -859,7 +859,7 @@ class AuthRepositoryImpl implements AuthRepository {
                 amount: 10.0,
                 source: TransactionSource.referral,
                 status: TransactionStatus.completed,
-                description: 'Sign-up bonus: 10 pts for referring a new user!',
+                description: 'Sign-up bonus: ₹10 for referring a new user!',
                 createdAt: DateTime.now(),
               );
               await _walletDataSource.createTransaction(referrerTxn);

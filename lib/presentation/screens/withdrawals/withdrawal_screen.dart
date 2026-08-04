@@ -7,10 +7,10 @@ import 'package:cashspark/presentation/providers/withdrawal_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// Redeem Points screen.
+/// Redeem screen.
 ///
-/// Points are in-platform only and have no real-world monetary value.
-/// Users spend points on premium features, extra spins, themes and boosters.
+/// Wallet balance is in-platform currency and has no real-world monetary
+/// value. Users spend it on premium features, extra spins, themes and boosters.
 /// There are NO cash payouts (UPI / Paytm / bank / QR) — this is aligned with
 /// AdSense policy, which prohibits compensating users with real money.
 class WithdrawalScreen extends StatefulWidget {
@@ -51,7 +51,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
 
     return Scaffold(
       appBar: PremiumAppBar(
-        title: 'Redeem Points',
+        title: 'Redeem',
         onBack: () => Navigator.pop(context),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
@@ -232,14 +232,14 @@ class _RedeemTabState extends State<_RedeemTab> {
                       ?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
               Text(
-                'Spend ${perk.cost.toStringAsFixed(0)} pts to redeem\\n${perk.description.toLowerCase()}?',
+                'Spend ₹${perk.cost.toStringAsFixed(0)} to redeem\\n${perk.description.toLowerCase()}?',
                 textAlign: TextAlign.center,
                 style: widget.theme.textTheme.bodyMedium?.copyWith(
                     color: widget.theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
               Text(
-                'Points are in-platform only and have no cash value.',
+                'Your balance is in-platform only and has no cash value.',
                 textAlign: TextAlign.center,
                 style: widget.theme.textTheme.bodySmall?.copyWith(
                     color: widget.theme.colorScheme.onSurfaceVariant),
@@ -340,12 +340,12 @@ class _RedeemTabState extends State<_RedeemTab> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Your Points Balance',
+                          Text('Your Balance',
                               style: widget.theme.textTheme.bodySmall?.copyWith(
                                   color: widget.theme.colorScheme.onSurfaceVariant)),
                           const SizedBox(height: 4),
                           Text(
-                            '${balance.toStringAsFixed(2)} pts',
+                            '₹${balance.toStringAsFixed(2)}',
                             style: widget.theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: widget.theme.colorScheme.primary,
@@ -403,7 +403,7 @@ class _RedeemTabState extends State<_RedeemTab> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Spend your points on in-platform perks like Premium access, bonus spins, exclusive themes and boosters. Points have no real-world monetary value and cannot be converted to cash.',
+                  'Spend your balance on in-platform perks like Premium access, bonus spins, exclusive themes and boosters. Your balance has no real-world monetary value and cannot be converted to cash.',
                   style: widget.theme.textTheme.bodySmall?.copyWith(
                       color: widget.theme.colorScheme.onSurfaceVariant),
                 ),
@@ -567,7 +567,7 @@ class _PerkCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '${perk.cost.toStringAsFixed(0)} pts',
+                    '₹${perk.cost.toStringAsFixed(0)}',
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: theme.colorScheme.primary,
@@ -690,7 +690,7 @@ class _SuccessAnimationOverlayState extends State<_SuccessAnimationOverlay>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Points will be deducted after approval',
+                        'Balance will be deducted after approval',
                         style: widget.theme.textTheme.bodySmall?.copyWith(
                           color: widget.theme.colorScheme.onSurfaceVariant,
                         ),
@@ -807,7 +807,7 @@ class _RedemptionHistoryTab extends StatelessWidget {
                 style: theme.textTheme.titleMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
-            Text('Redeem your points for in-platform perks above',
+            Text('Redeem your balance for in-platform perks above',
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
@@ -906,7 +906,7 @@ class _RedemptionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '-${withdrawal.amount.toStringAsFixed(2)} pts',
+                  '-₹${withdrawal.amount.toStringAsFixed(2)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
@@ -1013,7 +1013,7 @@ class _RedemptionDetailSheet extends StatelessWidget {
         // Amount
         Center(
           child: Text(
-            '-${withdrawal.amount.toStringAsFixed(2)} pts',
+            '-₹${withdrawal.amount.toStringAsFixed(2)}',
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.primary,

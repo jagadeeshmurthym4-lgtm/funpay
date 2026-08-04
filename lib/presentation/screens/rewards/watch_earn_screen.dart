@@ -535,7 +535,7 @@ class _TodayAdProgress extends StatelessWidget {
               _MiniStat(
                 icon: Icons.monetization_on_outlined,
                 label: "Today's Earnings",
-                value: '${todayEarnings.toStringAsFixed(2)} pts',
+                value: '₹${todayEarnings.toStringAsFixed(2)}',
                 color: AppTheme.accentGreen,
                 isDark: isDark,
               ),
@@ -625,7 +625,7 @@ class _WatchAdCard extends StatelessWidget {
 
             // Reward amount
             Text(
-              '0.80 pts – 2.00 pts',
+              '₹0.80 – ₹2.00',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
@@ -767,7 +767,7 @@ class _AdHistoryRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '+${reward.rewardAmount.toStringAsFixed(2)} pts',
+                '+₹${reward.rewardAmount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
@@ -843,7 +843,7 @@ class _LifetimeAdStats extends StatelessWidget {
                 child: _StatTile(
                   icon: Icons.monetization_on_outlined,
                   label: 'Total Earned',
-                  value: '${totalEarned.toStringAsFixed(2)} pts',
+                  value: '₹${totalEarned.toStringAsFixed(2)}',
                   color: AppTheme.accentGreen,
                   isDark: isDark,
                 ),
@@ -1015,7 +1015,7 @@ class _WatchAdRewardPopup extends StatelessWidget {
                 border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Text(
-                '${amount.toStringAsFixed(2)} pts',
+                '₹${amount.toStringAsFixed(2)}',
                 style: theme.textTheme.displaySmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

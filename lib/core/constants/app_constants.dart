@@ -49,6 +49,23 @@ class AppConstants {
   static const String claimedMilestonesCollection = 'claimed_milestones';
   static const String streakMultiplierConfigCollection = 'streak_multiplier_config';
 
+  // ─── CPX Research Offer Wall ────────────────────────────────
+  /// Server-written survey reward records (by the cpxPostback function).
+  static const String cpxTransactionsCollection = 'cpx_transactions';
+
+  /// Config doc id inside the `app_settings` collection (readable by
+  /// authenticated users, writable by admins). Only NON-secret values live
+  /// here (appId, appSecureHash for the entry link, enabled). The postback
+  /// verification secret lives in Firebase Functions config only.
+  static const String cpxSettingsDocId = 'cpx';
+
+  /// CPX Research publisher App ID (from publisher.cpx-research.com dashboard).
+  /// Overridable via the `admin_config/cpx` doc's `appId` field.
+  static const String cpxAppId = '35037';
+
+  /// CPX Research offer wall base URL (iframe/API integration docs).
+  static const String cpxOfferWallBaseUrl = 'https://offers.cpx-research.com/index.php';
+
   // Document Fields
   static const String fieldUid = 'uid';
   static const String fieldFullName = 'fullName';
@@ -106,4 +123,11 @@ class AppConstants {
   /// Set this to match the FCM_API_KEY environment variable on the CPX server.
   /// Leave empty for local development (server skips auth in dev mode).
   static const String fcmApiKey = 'cpx-server-secret-funpay-2024';
+
+  /// CPX Research postback URL (configure in their publisher dashboard →
+  /// Postback Settings). The endpoint runs on the Render backend
+  /// (cpx-server) — see cpx-server/README.md. A Cloud Functions variant
+  /// (functions/cpx.js) exists for projects on the Blaze plan.
+  static const String cpxPostbackUrl =
+      'https://cashspark-cpx-server.onrender.com/cpx/postback';
 }

@@ -9,6 +9,7 @@ enum TransactionSource {
   adminAdjustment,
   purchase,
   reward,
+  offerwall,
   other
 }
 

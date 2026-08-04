@@ -18,6 +18,7 @@ enum RewardFeature {
   monthlyBonus,
   streakRewards,
   coupons,
+  surveys,
 }
 
 class RewardsHubScreen extends StatefulWidget {
@@ -180,7 +181,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                       Text(
                         hasCheckedIn
                             ? 'Come back tomorrow!'
-                            : 'Earn 1 pts–3 pts today',
+                            : 'Earn ₹1–₹3 today',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 13,
@@ -254,7 +255,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
       _RewardFeatureItem(
         RewardFeature.weeklyBonus,
         'Weekly Bonus',
-        'Check in 7 days for 15 pts',
+        'Check in 7 days for ₹15',
         Icons.date_range_outlined,
         const Color(0xFF06B6D4),
         const LinearGradient(colors: [Color(0xFF06B6D4), Color(0xFF0891B2)]),
@@ -263,7 +264,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
       _RewardFeatureItem(
         RewardFeature.monthlyBonus,
         'Monthly Bonus',
-        'Full month for 40 pts',
+        'Full month for ₹40',
         Icons.event_outlined,
         const Color(0xFFEC4899),
         const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFFDB2777)]),
@@ -281,7 +282,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
       _RewardFeatureItem(
         RewardFeature.dailyCheckin,
         'Refer & Earn',
-        'Invite friends, earn 7 pts',
+        'Invite friends, earn ₹7',
         Icons.person_add_outlined,
         const Color(0xFFF59E0B),
         const LinearGradient(colors: [Color(0xFFF59E0B), Color(0xFFD97706)]),
@@ -296,6 +297,16 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
         const Color(0xFF8B5CF6),
         const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
         AppRouter.couponsMarketplace,
+      ),
+      // Surveys — CPX Research paid surveys
+      _RewardFeatureItem(
+        RewardFeature.surveys,
+        'Surveys',
+        'Earn from CPX surveys',
+        Icons.quiz_outlined,
+        const Color(0xFF06B6D4),
+        const LinearGradient(colors: [Color(0xFF06B6D4), Color(0xFF0891B2)]),
+        AppRouter.surveys,
       ),
     ];
 
@@ -482,7 +493,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Check in every day for 7 consecutive days to earn 15 pts!',
+                    'Check in every day for 7 consecutive days to earn ₹15!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
@@ -644,7 +655,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                                   context.read<WalletProvider>().listenToWallet(userId);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: const Text('🎉 Weekly Bonus claimed! 15 pts added to your wallet.'),
+                                      content: const Text('🎉 Weekly Bonus claimed! ₹15 added to your wallet.'),
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
@@ -661,7 +672,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                         claimed
                             ? 'Already Claimed ✓'
                             : canClaim
-                                ? 'Claim 15 pts'
+                                ? 'Claim ₹15'
                                 : 'Check in ${7 - checked.length} more day${7 - checked.length != 1 ? 's' : ''}',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                       ),
@@ -756,7 +767,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Check in every day this month to earn 40 pts!',
+                    'Check in every day this month to earn ₹40!',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
@@ -940,7 +951,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                                   context.read<WalletProvider>().listenToWallet(userId);
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: const Text('🎉 Monthly Bonus claimed! 40 pts added to your wallet.'),
+                                      content: const Text('🎉 Monthly Bonus claimed! ₹40 added to your wallet.'),
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
@@ -957,7 +968,7 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                         claimed
                             ? 'Already Claimed ✓'
                             : canClaim
-                                ? 'Claim 40 pts'
+                                ? 'Claim ₹40'
                                 : '${daysInMonth - checked.length} day${daysInMonth - checked.length != 1 ? 's' : ''} remaining',
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                       ),

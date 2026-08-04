@@ -89,7 +89,7 @@ class ReferralLevelProvider extends ChangeNotifier {
         rewardAmount: level.rewardAmount,
       );
       _claimedLevels.add(levelNumber);
-      _successMessage = '🎉 You claimed ${level.title} reward! +${level.rewardAmount.toStringAsFixed(2)} pts';
+      _successMessage = '🎉 You claimed ${level.title} reward! +₹${level.rewardAmount.toStringAsFixed(2)}';
       notifyListeners();
       return true;
     } on FirestoreException catch (e) {

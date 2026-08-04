@@ -96,13 +96,13 @@ class TermsConditionsScreen extends StatelessWidget {
           ),
           _section(
             theme: theme,
-            title: '6. Points & Redemption Rules',
+            title: '6. Balance & Redemption Rules',
             body:
-                'Points are in-platform only and have no real-world monetary value:\n\n'
-                '• Points are earned by completing eligible activities and are credited to your wallet.\n'
-                '• Points are non-transferable and cannot be exchanged for cash, cryptocurrency, gift cards, or any other monetary reward.\n'
-                '• Points may be redeemed for in-platform perks such as Premium access, bonus spins, exclusive themes, and boosters.\n'
-                '• A minimum redemption threshold applies and is displayed in the Redeem Points section.\n'
+                'Your balance is in-platform only and has no real-world monetary value:\n\n'
+                '• Balance is earned by completing eligible activities and is credited to your wallet.\n'
+                '• Balance is non-transferable and cannot be exchanged for cash, cryptocurrency, gift cards, or any other monetary reward.\n'
+                '• Balance may be redeemed for in-platform perks such as Premium access, bonus spins, exclusive themes, and boosters.\n'
+                '• A minimum redemption threshold applies and is displayed in the Redeem section.\n'
                 '• Redemptions are subject to verification and fraud review before processing.\n'
                 '• Fun Pay reserves the right to cancel pending redemptions if suspicious activity is detected.',
           ),

@@ -305,6 +305,14 @@ match /project_participations/{participationId} {
       allow write: if isAdmin();
     }
 
+    // CPX Research survey rewards - written by the cpxPostback Cloud Function
+    // (Admin SDK, not restricted by rules). Users can only read their own.
+    match /cpx_transactions/{transactionId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
     // Deny everything else
     match /{document=**} { allow read, write: if false; }
   }

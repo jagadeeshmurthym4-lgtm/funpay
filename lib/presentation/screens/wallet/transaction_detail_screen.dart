@@ -73,7 +73,7 @@ class TransactionDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    '${isCredit ? '+' : '-'}${transaction.amount.toStringAsFixed(2)} pts',
+                    '${isCredit ? '+' : '-'}₹${transaction.amount.toStringAsFixed(2)}',
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isCredit ? theme.colorScheme.tertiary : theme.colorScheme.error,
@@ -165,7 +165,7 @@ class TransactionDetailScreen extends StatelessWidget {
                   const Divider(height: 24),
                   _DetailRow(
                     label: 'Amount',
-                    value: '${transaction.amount.toStringAsFixed(2)} pts',
+                    value: '₹${transaction.amount.toStringAsFixed(2)}',
                     theme: theme,
                     valueColor: isCredit ? theme.colorScheme.tertiary : theme.colorScheme.error,
                   ),
@@ -206,6 +206,8 @@ class TransactionDetailScreen extends StatelessWidget {
         return 'Purchase';
       case TransactionSource.reward:
         return 'Reward';
+      case TransactionSource.offerwall:
+        return 'Survey Reward';
       case TransactionSource.other:
         return 'General';
     }

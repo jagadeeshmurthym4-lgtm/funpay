@@ -56,13 +56,13 @@ class ReferralDisclaimerScreen extends StatelessWidget {
             ),
             _section(
               theme: theme,
-              title: '2. First Approved Project Bonus (7 pts)',
+              title: '2. First Approved Project Bonus (₹7)',
               body:
-                  'The referrer earns 7 pts only after the referred user completes their FIRST approved project.\n\n'
+                  'The referrer earns ₹7 only after the referred user completes their FIRST approved project.\n\n'
                   '• The referred user must start a project, submit proof of completion, and have that '
                   'submission reviewed and approved by our admin team.\n'
-                  '• The 7 pts bonus is credited to the referrer\'s wallet automatically upon approval.\n'
-                  '• Only one 7 pts bonus per referred user. Duplicate rewards for the same referred user '
+                  '• The ₹7 bonus is credited to the referrer\'s wallet automatically upon approval.\n'
+                  '• Only one ₹7 bonus per referred user. Duplicate rewards for the same referred user '
                   'are prevented.\n'
                   '• If the referred user\'s project submission is rejected, no bonus is awarded.',
             ),
@@ -94,7 +94,7 @@ class ReferralDisclaimerScreen extends StatelessWidget {
                   'Your referral dashboard displays:\n\n'
                   '• Total Referrals: The number of users who signed up using your code.\n'
                   '• Active Referrals: Referred users who have completed at least one approved project.\n'
-                  '• Referral Earnings: Total 7 pts first-project bonuses earned.\n'
+                  '• Referral Earnings: Total ₹7 first-project bonuses earned.\n'
                   '• Lifetime Commission: Total 5% commissions earned from all referred users.',
             ),
             _section(

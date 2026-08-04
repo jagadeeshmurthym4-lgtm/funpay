@@ -1,5 +1,7 @@
 import 'package:cashspark/presentation/screens/rewards/watch_earn_screen.dart';
 import 'package:cashspark/presentation/screens/offers/offer_wall_screen.dart';
+import 'package:cashspark/presentation/screens/surveys/surveys_screen.dart';
+import 'package:cashspark/presentation/screens/surveys/cpx_surveys_screen.dart';
 import 'package:cashspark/presentation/screens/auth/complete_profile_screen.dart';
 import 'package:cashspark/presentation/screens/auth/registration_screen.dart';
 import 'package:cashspark/presentation/screens/auth/edit_profile_screen.dart';
@@ -76,6 +78,8 @@ class AppRouter {
   static const String myProjects = '/my-projects';
   static const String scratchCard = '/scratch-card';
   static const String watchEarn = '/watch-earn';
+  static const String surveys = '/surveys';
+  static const String cpxSurveys = '/cpx-surveys';
   static const String couponsMarketplace = '/coupons-marketplace';
   static const String search = '/search';
   static const String notificationPreferences = '/notification-preferences';
@@ -287,6 +291,16 @@ class AppRouter {
       case watchEarn:
         return MaterialPageRoute(
           builder: (_) => const WatchEarnScreen(),
+          settings: settings,
+        );
+      case surveys:
+        return MaterialPageRoute(
+          builder: (_) => const SurveysScreen(),
+          settings: settings,
+        );
+      case cpxSurveys:
+        return MaterialPageRoute(
+          builder: (_) => const CpxSurveysScreen(),
           settings: settings,
         );
       case search:

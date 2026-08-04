@@ -302,7 +302,7 @@ class _RewardsScreenState extends State<RewardsScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            '${rewardAmount.toStringAsFixed(2)} pts',
+            '₹${rewardAmount.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 42,
               fontWeight: FontWeight.w900,
@@ -630,7 +630,7 @@ class _CheckInHistoryRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
-                '+${reward.rewardAmount.toStringAsFixed(2)} pts',
+                '+₹${reward.rewardAmount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,

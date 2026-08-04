@@ -7,6 +7,7 @@ import 'package:cashspark/presentation/providers/admin_provider.dart';
 import 'package:cashspark/presentation/providers/withdrawal_provider.dart';
 import 'package:cashspark/presentation/screens/admin/admin_affiliate_projects_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_coupons_tab.dart';
+import 'package:cashspark/presentation/screens/admin/admin_cpx_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_referral_levels_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_streak_multiplier_tab.dart';
 import 'package:cashspark/presentation/screens/admin/admin_support_tab.dart';
@@ -28,7 +29,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 15, vsync: this);
+    _tabController = TabController(length: 16, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
   }
 
@@ -123,6 +124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 Tab(text: 'Streak Mult', icon: Icon(Icons.trending_up_rounded, size: 18)),
                 Tab(text: 'Referrals', icon: Icon(Icons.share_outlined, size: 18)),
                 Tab(text: 'Support', icon: Icon(Icons.support_agent_outlined, size: 18)),
+                Tab(text: 'CPX', icon: Icon(Icons.fact_check_outlined, size: 18)),
               ],
             ),
           ),
@@ -161,6 +163,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 const AdminStreakMultiplierTab(),
                 _ReferralsTab(admin: admin, theme: theme),
                 AdminSupportTab(admin: admin, theme: theme),
+                const AdminCpxTab(),
               ],
             );
           },
@@ -1603,7 +1606,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        '${withdrawal.amount.toStringAsFixed(2)} pts',
+                        '₹${withdrawal.amount.toStringAsFixed(2)}',
                         style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 6),
@@ -1814,7 +1817,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                           children: [
                             Icon(Icons.account_balance_wallet_outlined, size: 14, color: theme.colorScheme.onSurfaceVariant),
                             const SizedBox(width: 6),
-                            Text('Wallet: ${user.walletBalance.toStringAsFixed(2)} pts',
+                            Text('Wallet: ₹${user.walletBalance.toStringAsFixed(2)}',
                                 style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500)),
                           ],
                         ),
@@ -1823,7 +1826,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   ),
 
                 const SizedBox(height: 12),
-                _DialogDetailRow('Amount', '${withdrawal.amount.toStringAsFixed(2)} pts', theme, bold: true),
+                _DialogDetailRow('Amount', '₹${withdrawal.amount.toStringAsFixed(2)}', theme, bold: true),
                 const SizedBox(height: 4),
                 _DialogDetailRow('Perk', withdrawal.accountDetails, theme),
                 const SizedBox(height: 4),
@@ -1838,7 +1841,7 @@ class _AdminWithdrawalCard extends StatelessWidget {
                   _DialogDetailRow('Phone', withdrawal.userPhone!, theme),
                 ],
                 const SizedBox(height: 4),
-                _DialogDetailRow('Wallet Balance', '${withdrawal.walletBalanceAtRequest.toStringAsFixed(2)} pts', theme),
+                _DialogDetailRow('Wallet Balance', '₹${withdrawal.walletBalanceAtRequest.toStringAsFixed(2)}', theme),
                 const SizedBox(height: 12),
 
                 // Transaction ID field
@@ -2114,7 +2117,7 @@ class _WalletTabState extends State<_WalletTab> {
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Amount',
-                    prefixText: 'pts ',
+                    prefixText: '₹ ',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     filled: true,
                     fillColor: widget.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
@@ -2404,21 +2407,21 @@ class _SettingsTabState extends State<_SettingsTab> {
                 const SizedBox(height: 20),
 
                 _SettingsSection(title: 'Referral Bonuses', theme: widget.theme, children: [
-                  _SettingsField(label: 'Referrer Bonus (pts)', controller: _bonusReferrerController, theme: widget.theme),
+                  _SettingsField(label: 'Referrer Bonus (₹)', controller: _bonusReferrerController, theme: widget.theme),
                   const SizedBox(height: 8),
-                  _SettingsField(label: 'Referred Bonus (pts)', controller: _bonusReferredController, theme: widget.theme),
+                  _SettingsField(label: 'Referred Bonus (₹)', controller: _bonusReferredController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 16),
 
                 _SettingsSection(title: 'Reward Amounts', theme: widget.theme, children: [
-                  _SettingsField(label: 'Ad Reward (pts)', controller: _adRewardController, theme: widget.theme),
+                  _SettingsField(label: 'Ad Reward (₹)', controller: _adRewardController, theme: widget.theme),
                   const SizedBox(height: 8),
-                  _SettingsField(label: 'Daily Check-In (pts)', controller: _dailyCheckInController, theme: widget.theme),
+                  _SettingsField(label: 'Daily Check-In (₹)', controller: _dailyCheckInController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 16),
 
                 _SettingsSection(title: 'Redemption Limits', theme: widget.theme, children: [
-                  _SettingsField(label: 'Min Redemption (pts)', controller: _minWithdrawalController, theme: widget.theme),
+                  _SettingsField(label: 'Min Redemption (₹)', controller: _minWithdrawalController, theme: widget.theme),
                 ]),
                 const SizedBox(height: 24),
 
@@ -2470,9 +2473,9 @@ class _SettingsTabState extends State<_SettingsTab> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Expanded(child: _SettingsField(label: 'Ad Reward Amount (pts)', controller: _adRewardAmountCtrl, theme: widget.theme)),
+                      Expanded(child: _SettingsField(label: 'Ad Reward Amount (₹)', controller: _adRewardAmountCtrl, theme: widget.theme)),
                       const SizedBox(width: 8),
-                      Expanded(child: _SettingsField(label: 'Min Reward for Ad (pts)', controller: _minRewardForAdCtrl, theme: widget.theme)),
+                      Expanded(child: _SettingsField(label: 'Min Reward for Ad (₹)', controller: _minRewardForAdCtrl, theme: widget.theme)),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -2810,7 +2813,7 @@ class _ReferrerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${totalCommission.toStringAsFixed(2)} pts',
+                  '₹${totalCommission.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -2839,7 +2842,7 @@ class _ReferrerCard extends StatelessWidget {
               const SizedBox(width: 6),
               _MiniBadge(
                 label: 'Earned',
-                value: '${totalCommission.toStringAsFixed(0)} pts',
+                value: '₹${totalCommission.toStringAsFixed(0)}',
                 color: const Color(0xFF8B5CF6),
               ),
             ],
@@ -2992,7 +2995,7 @@ class _ReferredUserTile extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            isRewarded ? 'Bonus: 7 pts' : 'Not credited',
+                            isRewarded ? 'Bonus: ₹7' : 'Not credited',
                             style: TextStyle(
                               fontSize: 8,
                               fontWeight: FontWeight.w600,
@@ -3134,8 +3137,8 @@ Future<void> _showCreditDialog(
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Credit Amount (pts)',
-                    prefixText: 'pts ',
+                    labelText: 'Credit Amount (₹)',
+                    prefixText: '₹ ',
                     prefixStyle: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,
@@ -3213,7 +3216,7 @@ Future<void> _showCreditDialog(
       SnackBar(
         content: Text(
           success
-              ? '${amount.toStringAsFixed(2)} pts credited to referrer!'
+              ? '₹${amount.toStringAsFixed(2)} credited to referrer!'
               : admin.errorMessage ?? 'Failed to credit',
         ),
         behavior: SnackBarBehavior.floating,
@@ -3295,8 +3298,8 @@ Future<void> _showBulkCreditDialog(
                   controller: amountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    labelText: 'Credit Amount (pts) per Referral',
-                    prefixText: 'pts ',
+                    labelText: 'Credit Amount (₹) per Referral',
+                    prefixText: '₹ ',
                     prefixStyle: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w600,

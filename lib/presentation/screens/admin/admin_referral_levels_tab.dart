@@ -182,7 +182,7 @@ class _AdminReferralLevelsTabState extends State<AdminReferralLevelsTab> {
                   const SizedBox(height: 12),
                   TextField(
                     controller: rewardCtrl,
-                    decoration: const InputDecoration(labelText: 'Reward Amount (pts)', hintText: '10.00'),
+                    decoration: const InputDecoration(labelText: 'Reward Amount (₹)', hintText: '10.00'),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 12),
@@ -336,7 +336,7 @@ class _LevelCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${level.requiredReferrals} referrals • ${level.rewardAmount.toStringAsFixed(2)} pts reward',
+                  '${level.requiredReferrals} referrals • ₹${level.rewardAmount.toStringAsFixed(2)} reward',
                   style: theme.textTheme.bodySmall
                       ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                 ),

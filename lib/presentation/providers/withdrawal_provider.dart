@@ -202,7 +202,7 @@ class WithdrawalProvider extends ChangeNotifier {
         walletBalanceAtRequest: walletBalanceAtRequest,
       );
       _successMessage =
-          'Redemption request of ${amount.toStringAsFixed(2)} pts submitted!';
+          'Redemption request of ₹${amount.toStringAsFixed(2)} submitted!';
       _hasPendingWithdrawal = true;
       notifyListeners();
       return true;

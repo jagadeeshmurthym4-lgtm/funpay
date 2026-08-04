@@ -1,0 +1,32 @@
+# Render Blueprint — deploys the CPX Research postback server
+# (this repo's cpx-server/ folder) as its own Render web service.
+#
+# How to use:
+#   1. Push this repo to GitHub (Render will pick it up).
+#   2. Render Dashboard → "New +" → "Blueprint" → select this repo.
+#   3. Fill in the two prompted env vars (CPX_SECRET, FIREBASE_SERVICE_ACCOUNT).
+#
+# Alternatively create a "Web Service" manually and set:
+#   Root Directory: cpx-server
+#   Build Command:  npm install
+#   Start Command:  npm start
+services:
+  - type: web
+    name: cpx-postback-server
+    runtime: node
+    plan: free
+    rootDir: cpx-server
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: CPX_SECRET
+        sync: false # set in the Render dashboard — must match the CPX dashboard "secure hash"
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false # Firebase service account key as a JSON string
+      - key: CPX_ALLOW_UNSIGNED
+        # "true" → skip hash verification entirely (the CPX account does not
+        # have secure hash enabled, so postbacks arrive unsigned). Full hash
+        # verification stays enabled automatically if this is flipped to
+        # "false" later once CPX starts sending hashes.
+        value: "true"

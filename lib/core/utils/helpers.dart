@@ -53,7 +53,7 @@ class Helpers {
   }
 
   static String formatCurrency(double amount) {
-    return '${amount.toStringAsFixed(2)} pts';
+    return '₹${amount.toStringAsFixed(2)}';
   }
 
   static String formatNumber(dynamic number) {

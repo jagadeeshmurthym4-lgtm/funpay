@@ -164,7 +164,7 @@ class WalletFirestoreDataSource {
         .delete();
   }
 
-  /// Credits the referrer's wallet with 10 pts sign-up bonus.
+  /// Credits the referrer's wallet with ₹10 sign-up bonus.
   /// Includes the _referralId field for Firestore rule verification.
   Future<void> creditReferralSignupBonus({
     required String referrerUserId,

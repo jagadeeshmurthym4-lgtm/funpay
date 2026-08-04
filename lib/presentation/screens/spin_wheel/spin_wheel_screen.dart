@@ -53,16 +53,16 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
   static const int _dailyLimit = 3;
   static const String _spinCacheKey = 'cached_spin_data';
 
-  // 8 segments: 0 pts, 1 pts, 2 pts, 5 pts (each duplicated)
+  // 8 segments: ₹0, ₹1, ₹2, ₹5 (each duplicated)
   final List<_Segment> _segments = [
-    const _Segment('0 pts', 0.0, Color(0xFF64748B)),
-    const _Segment('1 pts', 1.0, Color(0xFFFF6B6B)),
-    const _Segment('2 pts', 2.0, Color(0xFF4ECDC4)),
-    const _Segment('5 pts', 5.0, Color(0xFFFFD93D)),
-    _Segment('0 pts', 0.0, const Color(0xFF64748B).withValues(alpha: 0.7)),
-    _Segment('1 pts', 1.0, const Color(0xFFFF6B6B).withValues(alpha: 0.85)),
-    _Segment('2 pts', 2.0, const Color(0xFF4ECDC4).withValues(alpha: 0.85)),
-    _Segment('5 pts', 5.0, const Color(0xFFFFD93D).withValues(alpha: 0.85)),
+    const _Segment('₹0', 0.0, Color(0xFF64748B)),
+    const _Segment('₹1', 1.0, Color(0xFFFF6B6B)),
+    const _Segment('₹2', 2.0, Color(0xFF4ECDC4)),
+    const _Segment('₹5', 5.0, Color(0xFFFFD93D)),
+    _Segment('₹0', 0.0, const Color(0xFF64748B).withValues(alpha: 0.7)),
+    _Segment('₹1', 1.0, const Color(0xFFFF6B6B).withValues(alpha: 0.85)),
+    _Segment('₹2', 2.0, const Color(0xFF4ECDC4).withValues(alpha: 0.85)),
+    _Segment('₹5', 5.0, const Color(0xFFFFD93D).withValues(alpha: 0.85)),
   ];
 
   int get _spinsToday => _spinData?.spinsToday ?? 0;
@@ -305,20 +305,20 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
     }
   }
 
-  /// Determine reward: 0 pts=20%, 1 pts=30%, 2 pts=30%, 5 pts=20%
+  /// Determine reward: ₹0=20%, ₹1=30%, ₹2=30%, ₹5=20%
   int _determineRewardIndex() {
     final roll = _random.nextDouble();
     if (roll < 0.20) {
-      // 0 pts – pick between index 0 and 4
+      // ₹0 – pick between index 0 and 4
       return _random.nextBool() ? 0 : 4;
     } else if (roll < 0.50) {
-      // 1 pts – pick between index 1 and 5
+      // ₹1 – pick between index 1 and 5
       return _random.nextBool() ? 1 : 5;
     } else if (roll < 0.80) {
-      // 2 pts – pick between index 2 and 6
+      // ₹2 – pick between index 2 and 6
       return _random.nextBool() ? 2 : 6;
     } else {
-      // 5 pts – pick between index 3 and 7
+      // ₹5 – pick between index 3 and 7
       return _random.nextBool() ? 3 : 7;
     }
   }
@@ -1014,7 +1014,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
                             ),
                           const SizedBox(height: 2),
                           Text(
-                            isWin ? segment.label : '0 pts',
+                            isWin ? segment.label : '₹0',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 32,
@@ -1084,7 +1084,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
             icon: Icons.monetization_on_outlined,
             iconColor: const Color(0xFF4ADE80),
             value:
-                '${(_spinData?.totalRewardsEarned ?? 0).toStringAsFixed(0)} pts',
+                '₹${(_spinData?.totalRewardsEarned ?? 0).toStringAsFixed(0)}',
             label: 'Total Earned',
             isDark: isDark,
           ),

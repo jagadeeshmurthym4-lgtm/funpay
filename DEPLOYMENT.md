@@ -76,6 +76,41 @@ firebase deploy --only hosting
 - The app runs entirely on Firestore (50k reads/day free), Firebase Auth, and Hosting on Spark plan.
 - Custom tasks with admin review are handled via Firestore collections (`custom_tasks`, `task_submissions`).
 
+## CPX Research Survey Wall Integration
+
+CashSpark monetizes with the **CPX Research** offer wall (paid surveys). Survey rewards are credited to the user's wallet automatically via a secure server-to-server postback.
+
+### Architecture
+- **App**: `Surveys` option in the Rewards hub → `SurveysScreen` → `CpxSurveysScreen` loads `https://offers.cpx-research.com/index.php` (App ID `35037`) in a WebView (mobile) or a new tab (web).
+- **Backend**: the CPX reward callback (`cpxPostback`) runs on the **Render** backend (`cpx-server/`) since this project is on the Firebase Spark plan (Cloud Functions require Blaze). It verifies the MD5 `hash` signature, enforces idempotency per `transaction_id`, and atomically credits the user's wallet + creates a transaction record + in-app notification + FCM push.
+
+### One-time setup
+1. **Seed the app config** (App ID / enable flag → `app_settings/cpx`):
+   ```bash
+   cd scripts && node seed_cpx_config.js
+   ```
+2. **Deploy the postback endpoint on Render** — see `cpx-server/README.md`. Either add the route to the existing `cashspark-cpx-server` Express app, or deploy `cpx-server/` as its own Render web service. Set the `CPX_SECRET` env var (the postback verification secret — never in Firestore, since `app_settings` is client-readable).
+3. **Deploy Firestore rules** (already done for `cpx_transactions`):
+   ```bash
+   firebase deploy --only firestore:rules
+   ```
+4. **Configure the postback URL** in the CPX Research publisher dashboard → **Postback Settings** (**Main Postback**):
+   ```
+   https://cashspark-cpx-server.onrender.com/cpx/postback?trans_id={trans_id}&user_id={user_id}&amount={amount_local}&amount_usd={amount_usd}&status={status}&hash={hash}
+   ```
+   Set the dashboard's **secure hash** to the same value as `CPX_SECRET`.
+
+   The endpoint accepts GET or POST and reads `transaction_id`, `user_id` (your CashSpark uid), `amount`, `hash` (aliases: `trans_id`, `ext_user_id`, `payout`).
+
+   > **Blaze-plan alternative:** if you ever upgrade, `functions/cpx.js` + the `cpxPostback` function in `functions/index.js` provide the same endpoint as a Cloud Function at `https://us-central1-cashspark-c15bd.cloudfunctions.net/cpxPostback` (set `cpx.secret` via `firebase functions:config:set`).
+
+### Notes
+- **Payouts are 1:1** — the CPX `amount` is credited to the wallet as points.
+- **Hash verification** accepts CPX's documented `md5("{value}-{secret}")` style plus common concatenations of `transaction_id`/`user_id`/`amount` with the secret (amount is normalised to strip trailing zeros). If CPX's exact formula differs for your account, confirm it in the dashboard's Postback tab — only the concatenation order changes, the secret is the same. The server logs which format matched, so check Render logs when testing.
+- **Idempotency**: each `transaction_id` is credited once — the guard is checked **inside** the Firestore transaction, so even concurrent duplicate postbacks can't double-credit. CPX retries after a 500 are safe.
+- **No secret configured**: the endpoint returns `503` until `CPX_SECRET` is set. Unsigned postbacks are rejected (`403`) by default (`CPX_ALLOW_UNSIGNED=true` for dev only).
+- **Optional**: set `appSecureHash` in `app_settings/cpx` to enable `secure_hash` on the wall entry link (client-side per CPX docs). This is NOT the postback secret.
+
 ## Deep Linking Setup (Password Reset & Email Verification)
 
 Deep linking allows password reset and email verification links to open the app directly on mobile instead of a browser.

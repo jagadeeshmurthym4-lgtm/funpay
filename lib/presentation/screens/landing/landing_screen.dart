@@ -145,7 +145,7 @@ class LandingScreen extends StatelessWidget {
                     size: 14, color: Color(0xFF4ADE80)),
                 const SizedBox(width: 6),
                 Text(
-                  'Earn points for everyday activities',
+                  'Earn rewards for everyday activities',
                   style: rs.tiny.copyWith(color: const Color(0xFF4ADE80)),
                 ),
               ],
@@ -153,7 +153,7 @@ class LandingScreen extends StatelessWidget {
           ),
           SizedBox(height: rs.spaceLg),
           Text(
-            'Turn your daily\nroutine into points',
+            'Turn your daily\nroutine into rewards',
             style: rs.h1.copyWith(
               color: Colors.white,
               fontSize: rs.fs(30),
@@ -164,7 +164,7 @@ class LandingScreen extends StatelessWidget {
           SizedBox(height: rs.spaceMd),
           Text(
             'Complete tasks, watch videos, check in daily, and refer friends '
-            'to earn Fun Points. Redeem them for premium features, bonus '
+            'to earn rewards. Redeem them for premium features, bonus '
             'spins, exclusive themes and boosters — all inside the app.',
             style: rs.body.copyWith(
               color: Colors.white.withValues(alpha: 0.75),
@@ -233,7 +233,7 @@ class LandingScreen extends StatelessWidget {
           _divider(isDark, rs),
           _statItem(context, 'Daily', 'Check-ins & Streaks'),
           _divider(isDark, rs),
-          _statItem(context, 'Instant', 'Points Credit'),
+          _statItem(context, 'Instant', 'Reward Credit'),
         ],
       ),
     );
@@ -286,13 +286,13 @@ class LandingScreen extends StatelessWidget {
         icon: Icons.play_circle_fill_rounded,
         color: const Color(0xFF4ADE80),
         title: 'Watch & Earn',
-        desc: 'Watch short rewarded videos to earn Fun Points quickly.',
+        desc: 'Watch short rewarded videos to earn rewards quickly.',
       ),
       (
         icon: Icons.event_available_rounded,
         color: const Color(0xFF3B82F6),
         title: 'Daily Check-ins',
-        desc: 'Check in every day and build streaks for bonus points.',
+        desc: 'Check in every day and build streaks for bonus rewards.',
       ),
       (
         icon: Icons.checklist_rounded,
@@ -304,19 +304,19 @@ class LandingScreen extends StatelessWidget {
         icon: Icons.people_alt_rounded,
         color: const Color(0xFFF59E0B),
         title: 'Refer & Earn',
-        desc: 'Invite friends and earn points when they join and participate.',
+        desc: 'Invite friends and earn rewards when they join and participate.',
       ),
       (
         icon: Icons.casino_rounded,
         color: const Color(0xFFEC4899),
         title: 'Lucky Wheel',
-        desc: 'Spin the wheel for bonus points and exciting prizes.',
+        desc: 'Spin the wheel for bonus rewards and exciting prizes.',
       ),
       (
         icon: Icons.redeem_rounded,
         color: const Color(0xFF06B6D4),
         title: 'Redeem Perks',
-        desc: 'Spend points on premium features, themes, spins and boosters.',
+        desc: 'Spend rewards on premium features, themes, spins and boosters.',
       ),
     ];
 
@@ -401,7 +401,7 @@ class LandingScreen extends StatelessWidget {
       ),
       (
         num: '2',
-        title: 'Earn Fun Points',
+        title: 'Earn Rewards',
         desc: 'Watch videos, complete tasks, check in, and refer friends.',
         icon: Icons.stars_rounded,
       ),
@@ -503,19 +503,19 @@ class LandingScreen extends StatelessWidget {
     final faqs = [
       (
         q: 'Is Fun Pay free to use?',
-        a: 'Yes! Creating an account and earning points is completely free. '
+        a: 'Yes! Creating an account and earning rewards is completely free. '
             'Just sign up and start completing activities.',
       ),
       (
-        q: 'How do I earn points?',
+        q: 'How do I earn rewards?',
         a: 'Watch rewarded videos, complete daily check-ins, finish tasks and '
-            'challenges, and refer friends. Points are credited to your '
+            'challenges, and refer friends. Rewards are credited to your '
             'wallet automatically.',
       ),
       (
-        q: 'What can I redeem my points for?',
-        a: 'Points can be spent on in-platform perks such as Premium access, '
-            'bonus spins, exclusive themes and booster packs. Points have no '
+        q: 'What can I redeem my rewards for?',
+        a: 'Rewards can be spent on in-platform perks such as Premium access, '
+            'bonus spins, exclusive themes and booster packs. Rewards have no '
             'cash value and cannot be exchanged for money.',
       ),
       (
@@ -623,7 +623,7 @@ class LandingScreen extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Ready to start earning points?',
+            'Ready to start earning rewards?',
             textAlign: TextAlign.center,
             style: rs.h2.copyWith(
               color: Colors.black,
@@ -706,7 +706,7 @@ class LandingScreen extends StatelessWidget {
           ),
           SizedBox(height: rs.spaceLg),
           Text(
-            'Fun Pay · Points are in-platform only and have no cash value.',
+            'Fun Pay · Rewards are in-platform only and have no cash value.',
             textAlign: TextAlign.center,
             style: rs.caption.copyWith(
               color: isDark ? AppTheme.textMuted : const Color(0xFF94A3B8),
