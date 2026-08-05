@@ -464,7 +464,7 @@ class _SpinWheelScreenState extends State<SpinWheelScreen>
     final rewardProvider = context.read<RewardProvider>();
 
     try {
-      final rewardAmount = await AdMobServiceImpl.instance.showRewardedAd();
+      final rewardAmount = await AdMobServiceImpl.instance.showRewardedInterstitialAd();
 
       if (rewardAmount == null || rewardAmount <= 0) {
         // Ad was skipped or failed

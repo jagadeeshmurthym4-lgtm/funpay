@@ -37,6 +37,24 @@ class MockAdService implements AdService {
   bool get isAdReady => false;
 
   @override
+  Future<void> loadRewardedInterstitialAd() async {}
+
+  @override
+  Future<double?> showRewardedInterstitialAd() async => null;
+
+  @override
+  bool get isRewardedInterstitialReady => false;
+
+  @override
+  Future<bool> loadNativeAd({int slot = 0}) async => false;
+
+  @override
+  dynamic getNativeAd(int slot) => null;
+
+  @override
+  void disposeNativeAd(int slot) {}
+
+  @override
   Future<bool> showInterstitialAd() async => false;
 
   @override

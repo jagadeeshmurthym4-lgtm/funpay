@@ -1,4 +1,5 @@
 import 'package:cashspark/core/theme/app_theme.dart';
+import 'package:cashspark/core/widgets/native_ad_view.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/presentation/providers/auth_provider.dart';
 import 'package:cashspark/presentation/providers/notification_provider.dart';
@@ -59,6 +60,10 @@ class MoreScreen extends StatelessWidget {
 
                 // Wallet summary
                 _buildWalletSummaryCard(walletProv, isDark, context),
+                const SizedBox(height: 16),
+
+                // Native ad
+                const NativeAdView(slot: 5),
                 const SizedBox(height: 16),
 
                 // Referral section
@@ -275,7 +280,7 @@ class MoreScreen extends StatelessWidget {
     final items = [
       _MenuItem(Icons.notifications_outlined, 'Notifications', AppRouter.notifications, badge: unreadCount),
       _MenuItem(Icons.account_balance_wallet_outlined, 'Wallet', null),
-      _MenuItem(Icons.redeem_rounded, 'Redeem Rewards', AppRouter.withdrawals),
+      _MenuItem(Icons.payments_outlined, 'Withdrawals', AppRouter.withdrawals),
       _MenuItem(Icons.person_add_outlined, 'Referrals', AppRouter.referrals),
       _MenuItem(Icons.settings_outlined, 'Settings', AppRouter.appSettings),
       _MenuItem(Icons.account_circle_outlined, 'Account', AppRouter.accountManagement),

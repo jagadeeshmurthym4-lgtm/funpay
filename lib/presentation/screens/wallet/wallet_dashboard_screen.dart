@@ -1,6 +1,7 @@
 import 'package:cashspark/core/theme/app_theme.dart';
 import 'package:cashspark/core/utils/helpers.dart';
 import 'package:cashspark/core/widgets/earnings_charts.dart';
+import 'package:cashspark/core/widgets/native_ad_view.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/core/widgets/shimmer_loading.dart';
 import 'package:cashspark/domain/entities/transaction_entity.dart';
@@ -176,7 +177,7 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                     Expanded(
                       child: PremiumStatCard(
                         icon: Icons.arrow_upward_outlined,
-                        label: 'Total Redeemed',
+                        label: 'Total Withdrawn',
                         value: Helpers.formatCurrency(
                             wallet?.totalWithdrawn ?? 0.0),
                         color: AppTheme.accentOrange,
@@ -205,8 +206,8 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () =>
                         Navigator.pushNamed(context, AppRouter.withdrawals),
-                    icon: const Icon(Icons.redeem_rounded, size: 22),
-                    label: const Text('Redeem Points',
+                    icon: const Icon(Icons.payments_outlined, size: 22),
+                    label: const Text('Withdraw',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -225,6 +226,10 @@ class _WalletDashboardScreenState extends State<WalletDashboardScreen> {
                 ),
 
                 const SizedBox(height: 16),
+
+                // ─── NATIVE AD ─────────────────────────────
+                const NativeAdView(slot: 4),
+                const SizedBox(height: 8),
 
                 // ─── EARNINGS BREAKDOWN PIE CHART ─────────
                 PremiumCard(
@@ -476,7 +481,7 @@ class _TransactionCard extends StatelessWidget {
       case TransactionSource.referral:
         return 'Referral Bonus';
       case TransactionSource.withdrawal:
-        return 'Redemption';
+        return 'Withdrawal';
       case TransactionSource.bonus:
         return 'Bonus';
       case TransactionSource.adminAdjustment:

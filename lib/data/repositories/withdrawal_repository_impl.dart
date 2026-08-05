@@ -21,8 +21,8 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   final NotificationFirestoreDataSource _notificationDataSource;
   final Uuid _uuid;
 
-  // Configurable redemption limits
-  static const double minRedemptionAmount = 10.0;
+  // Configurable withdrawal limits
+  static const double minWithdrawalAmount = 85.0;
   static const int maxQrSizeBytes = 5 * 1024 * 1024; // 5 MB
   static const List<String> allowedQrFormats = ['png', 'jpg', 'jpeg'];
 
@@ -108,7 +108,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
   Future<WithdrawalEntity> requestWithdrawal({
     required String userId,
     required double amount,
-    required RedemptionMethod method,
+    required WithdrawalMethod method,
     required String accountDetails,
     String? qrCodeUrl,
     String? userName,
@@ -120,10 +120,10 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       // Validate withdrawal rules
       await validateWithdrawalRules(userId: userId, amount: amount);
 
-      // Check for duplicate pending redemption request
+      // Check for duplicate pending request
       final hasPending = await _dataSource.hasPendingWithdrawal(userId);
       if (hasPending) {
-        throw WithdrawalException('You already have a pending redemption request');
+        throw WithdrawalException('You already have a pending withdrawal request');
       }
 
       // Check balance via wallet datasource
@@ -152,17 +152,17 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
 
       await _dataSource.createWithdrawal(withdrawal);
 
-      // Send notification for redemption submitted
+      // Send notification for withdrawal submitted
       await _createNotification(
         userId: userId,
-        title: '📤 Redemption Submitted',
-        message: 'Your redemption request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
+        title: '📤 Withdrawal Submitted',
+        message: 'Your withdrawal request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: userId,
-        title: '📤 Redemption Submitted',
-        message: 'Your redemption request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
+        title: '📤 Withdrawal Submitted',
+        message: 'Your withdrawal request of ₹${amount.toStringAsFixed(2)} has been submitted and is pending review.',
         type: 'withdrawal',
       );
 
@@ -172,7 +172,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     } on FirestoreException {
       rethrow;
     } catch (e) {
-      throw FirestoreException('Failed to request redemption: $e');
+      throw FirestoreException('Failed to request withdrawal: $e');
     }
   }
 
@@ -214,9 +214,9 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     required String userId,
     required double amount,
   }) async {
-    if (amount < minRedemptionAmount) {
+    if (amount < minWithdrawalAmount) {
       throw WithdrawalException(
-          'Minimum redemption is ₹${minRedemptionAmount.toStringAsFixed(2)}');
+          'Minimum withdrawal amount is ₹${minWithdrawalAmount.toStringAsFixed(2)}');
     }
   }
 
@@ -281,7 +281,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
         source: TransactionSource.withdrawal,
         status: TransactionStatus.completed,
         description:
-            'Redemption of ₹${existing.amount.toStringAsFixed(2)} for ${existing.method.name}',
+            'Withdrawal of ₹${existing.amount.toStringAsFixed(2)} via ${existing.method.name}',
         createdAt: DateTime.now(),
       );
       await _walletDataSource.createTransaction(transaction);
@@ -390,14 +390,14 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       // Send notification for withdrawal approved (in-app + push)
       await _createNotification(
         userId: existing.userId,
-        title: '✅ Redemption Approved',
-        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} has been approved and granted to your account.',
+        title: '✅ Withdrawal Approved',
+        message: 'Your withdrawal request of ₹${existing.amount.toStringAsFixed(2)} has been approved and is being processed.',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: existing.userId,
-        title: '✅ Redemption Approved',
-        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} has been approved and granted to your account.',
+        title: '✅ Withdrawal Approved',
+        message: 'Your withdrawal request of ₹${existing.amount.toStringAsFixed(2)} has been approved and is being processed.',
         type: 'withdrawal',
       );
 
@@ -407,7 +407,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     } on FirestoreException {
       rethrow;
     } catch (e) {
-      throw FirestoreException('Failed to approve redemption: $e');
+      throw FirestoreException('Failed to approve withdrawal: $e');
     }
   }
 
@@ -447,14 +447,14 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
       // Send notification for withdrawal rejected (in-app + push)
       await _createNotification(
         userId: existing.userId,
-        title: '❌ Redemption Rejected',
-        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
+        title: '❌ Withdrawal Rejected',
+        message: 'Your withdrawal request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
         type: NotificationType.withdrawal,
       );
       await _sendFcmTargetedPush(
         userId: existing.userId,
-        title: '❌ Redemption Rejected',
-        message: 'Your redemption request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
+        title: '❌ Withdrawal Rejected',
+        message: 'Your withdrawal request of ₹${existing.amount.toStringAsFixed(2)} was rejected. Reason: $remarks',
         type: 'withdrawal',
       );
 
@@ -464,7 +464,7 @@ class WithdrawalRepositoryImpl implements WithdrawalRepository {
     } on FirestoreException {
       rethrow;
     } catch (e) {
-      throw FirestoreException('Failed to reject redemption: $e');
+      throw FirestoreException('Failed to reject withdrawal: $e');
     }
   }
 

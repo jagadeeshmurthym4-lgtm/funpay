@@ -21,7 +21,7 @@ Map<NotificationType, ({String label, IconData icon, Color color})> get _typeMet
         color: Colors.blue,
       ),
       NotificationType.withdrawal: (
-        label: 'Redemptions',
+        label: 'Withdrawals',
         icon: Icons.logout_outlined,
         color: Colors.red,
       ),

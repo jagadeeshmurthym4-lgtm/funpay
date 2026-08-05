@@ -83,7 +83,7 @@ the postback `hash` is the authentication.
 
 ## Notes
 
-- **Payouts are 1:1** — the CPX `amount` is credited to the wallet as points.
+- **Payouts are 1:1** — the CPX `amount` is credited to the wallet in ₹ (rupees).
 - **Idempotent** — each `transaction_id` is credited once; retries are safe.
 - **Hash formats** — accepts CPX's documented `md5("{value}-{secret}")` style
   plus common concatenations of `transaction_id`/`user_id`/`amount` with the

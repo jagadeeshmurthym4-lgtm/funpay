@@ -5,7 +5,7 @@ abstract class WithdrawalRepository {
   Future<WithdrawalEntity> requestWithdrawal({
     required String userId,
     required double amount,
-    required RedemptionMethod method,
+    required WithdrawalMethod method,
     required String accountDetails,
     String? qrCodeUrl,
     String? userName,

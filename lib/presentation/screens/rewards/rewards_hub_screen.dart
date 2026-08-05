@@ -1,4 +1,5 @@
 import 'package:cashspark/core/theme/app_theme.dart';
+import 'package:cashspark/core/widgets/native_ad_view.dart';
 import 'package:cashspark/presentation/providers/auth_provider.dart';
 import 'package:cashspark/presentation/providers/reward_provider.dart';
 import 'package:cashspark/presentation/providers/wallet_provider.dart';
@@ -43,6 +44,8 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
             _buildHeader(isDark),
             const SizedBox(height: 16),
             _buildDailyCheckin(isDark),
+            const SizedBox(height: 12),
+            const NativeAdView(slot: 1),
             const SizedBox(height: 12),
             _buildRewardsGrid(isDark),
           ],
@@ -581,9 +584,10 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                         onPressed: isRecovering
                             ? null
                             : () async {
-                                // Step 1: Show rewarded ad
+                                // Step 1: Show rewarded interstitial ad
                                 final rewardAmount =
-                                    await AdMobServiceImpl.instance.showRewardedAd();
+                                    await AdMobServiceImpl.instance
+                                        .showRewardedInterstitialAd();
                                 if (rewardAmount == null || ctx.mounted == false) {
                                   // Ad was skipped or failed
                                   if (ctx.mounted) {
@@ -873,9 +877,10 @@ class _RewardsHubScreenState extends State<RewardsHubScreen> {
                         onPressed: isRecoveringMonthly
                             ? null
                             : () async {
-                                // Step 1: Show rewarded ad
+                                // Step 1: Show rewarded interstitial ad
                                 final rewardAmount =
-                                    await AdMobServiceImpl.instance.showRewardedAd();
+                                    await AdMobServiceImpl.instance
+                                        .showRewardedInterstitialAd();
                                 if (rewardAmount == null || ctx.mounted == false) {
                                   if (ctx.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(

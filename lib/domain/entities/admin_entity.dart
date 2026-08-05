@@ -79,7 +79,7 @@ class AppSettingsEntity {
 
   const AppSettingsEntity({
     required this.id,
-    this.minWithdrawalAmount = 45.0,
+    this.minWithdrawalAmount = 85.0,
     this.maxWithdrawalAmount = 999999.0,
     this.dailyWithdrawalLimit = 999999.0,
     this.referrerBonus = 10.0,

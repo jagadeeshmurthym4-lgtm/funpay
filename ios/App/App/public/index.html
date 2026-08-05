@@ -340,17 +340,17 @@
     }
     .card.full { grid-column: 1 / -1; }
 
-    .points-display { display: flex; align-items: center; gap: 16px; }
-    .points-amount {
+    .earned-display { display: flex; align-items: center; gap: 16px; }
+    .earned-amount {
       font-size: 40px; font-weight: 900;
       background: var(--accent-gradient);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
       background-clip: text; line-height: 1;
     }
-    .points-label { font-size: 13px; color: var(--text-secondary); }
-    .points-breakdown { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
-    .points-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
-    .points-item .pt { color: var(--accent-gold); font-weight: 700; }
+    .earned-label { font-size: 13px; color: var(--text-secondary); }
+    .earned-breakdown { display: flex; gap: 20px; margin-top: 12px; flex-wrap: wrap; }
+    .earned-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .earned-item .amt { color: var(--accent-gold); font-weight: 700; }
 
     .achievements-grid { display: flex; gap: 10px; flex-wrap: wrap; }
     .achievement {
@@ -381,7 +381,7 @@
     }
     .activity-item .emoji { font-size: 18px; }
     .activity-item .time { color: var(--text-muted); font-size: 12px; margin-left: auto; font-weight: 500; }
-    .activity-item .pts { color: var(--accent-gold); font-weight: 700; font-size: 12px; }
+    .activity-item .amt { color: var(--accent-gold); font-weight: 700; font-size: 12px; }
 
     /* Week summary bar */
     .week-bar { display: flex; gap: 6px; margin-top: 12px; }
@@ -515,7 +515,7 @@
     .history-item:hover { background: var(--bg-card-hover); }
     .history-item .date { font-weight: 600; font-size: 14px; min-width: 80px; }
     .history-item .h-mood { font-size: 20px; }
-    .history-item .h-pts { margin-left: auto; color: var(--accent-gold); font-weight: 700; font-size: 13px; }
+    .history-item .h-amt { margin-left: auto; color: var(--accent-gold); font-weight: 700; font-size: 13px; }
 
     .settings-group { margin-bottom: 20px; }
     .settings-group h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
@@ -710,8 +710,8 @@
               <div class="lbl">Day Streak</div>
             </div>
             <div class="checkin-stat">
-              <div class="num purple" id="totalPoints">0</div>
-              <div class="lbl">Spark Points</div>
+              <div class="num purple" id="totalEarned">₹0</div>
+              <div class="lbl">₹ Earned</div>
             </div>
           </div>
         </div>
@@ -719,19 +719,19 @@
 
       <!-- Dashboard Grid -->
       <div class="dashboard-grid">
-        <!-- Points Card -->
+        <!-- Earned Card -->
         <div class="card">
           <div class="card-header">
-            <span class="card-title">Spark Points</span>
+            <span class="card-title">₹ Earned</span>
             <span style="font-size:20px;">💰</span>
           </div>
-          <div class="points-display">
-            <span class="points-amount" id="pointsAmount">0</span>
+          <div class="earned-display">
+            <span class="earned-amount" id="earnedAmount">₹0</span>
             <div>
-              <div class="points-label">Total Earned</div>
-              <div class="points-breakdown">
-                <span class="points-item">⚡ <span class="pt" id="ptsCheckin">0</span> from check-ins</span>
-                <span class="points-item">🔥 <span class="pt" id="ptsStreak">0</span> streak bonus</span>
+              <div class="earned-label">Total Earned</div>
+              <div class="earned-breakdown">
+                <span class="earned-item">⚡ <span class="amt" id="earnedCheckin">₹0</span> from check-ins</span>
+                <span class="earned-item">🔥 <span class="amt" id="earnedStreak">₹0</span> streak bonus</span>
               </div>
             </div>
           </div>
@@ -1008,21 +1008,21 @@
     { id: 'streak3', icon: '🔥', name: 'On Fire', desc: 'Reach a 3-day streak', req: d => d.longestStreak >= 3 },
     { id: 'streak7', icon: '💎', name: 'Diamond Streak', desc: 'Reach a 7-day streak', req: d => d.longestStreak >= 7 },
     { id: 'streak30', icon: '👑', name: 'Legendary', desc: 'Reach a 30-day streak', req: d => d.longestStreak >= 30 },
-    { id: 'points50', icon: '💰', name: 'Earning', desc: 'Earn 50 Spark Points', req: d => d.totalPoints >= 50 },
-    { id: 'points200', icon: '💸', name: 'Spark Rich', desc: 'Earn 200 Spark Points', req: d => d.totalPoints >= 200 },
+    { id: 'earned50', icon: '💰', name: 'Earning', desc: 'Earn ₹50', req: d => d.totalEarned >= 50 },
+    { id: 'earned200', icon: '💸', name: 'Spark Rich', desc: 'Earn ₹200', req: d => d.totalEarned >= 200 },
     { id: 'perfect', icon: '🏅', name: 'Perfectionist', desc: 'Complete 25 check-ins', req: d => d.total >= 25 },
   ];
 
   const LEVELS = [
-    { name: 'Bronze', icon: '🥉', emoji: '🥉', points: 0 },
-    { name: 'Silver', icon: '🥈', emoji: '🥈', points: 50 },
-    { name: 'Gold', icon: '🥇', emoji: '🥇', points: 120 },
-    { name: 'Platinum', icon: '💎', emoji: '💎', points: 250 },
-    { name: 'Diamond', icon: '👑', emoji: '👑', points: 500 },
+    { name: 'Bronze', icon: '🥉', emoji: '🥉', earned: 0 },
+    { name: 'Silver', icon: '🥈', emoji: '🥈', earned: 50 },
+    { name: 'Gold', icon: '🥇', emoji: '🥇', earned: 120 },
+    { name: 'Platinum', icon: '💎', emoji: '💎', earned: 250 },
+    { name: 'Diamond', icon: '👑', emoji: '👑', earned: 500 },
   ];
 
   function getDefaultState() {
-    return { checkins: [], totalPoints: 0, ptsFromCheckins: 0, ptsFromStreaks: 0, longestStreak: 0 };
+    return { checkins: [], totalEarned: 0, earnedFromCheckins: 0, earnedFromStreaks: 0, longestStreak: 0 };
   }
 
   function getDefaultSettings() {
@@ -1032,9 +1032,36 @@
   function loadState() {
     try {
       const raw = localStorage.getItem(STATE_KEY);
-      if (raw) return { ...getDefaultState(), ...JSON.parse(raw) };
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // One-time migration from the legacy 'points' storage schema.
+        if (parsed && parsed.totalPoints != null) {
+          return migrateLegacyState(parsed);
+        }
+        return { ...getDefaultState(), ...parsed };
+      }
     } catch (e) {}
     return getDefaultState();
+  }
+
+  // Converts data saved under the legacy 'points' schema to the new
+  // 'earned' (rupee) schema, then rewrites storage. Runs once.
+  function migrateLegacyState(legacy) {
+    const migrated = {
+      checkins: (legacy.checkins || []).map((c) => ({
+        date: c.date,
+        mood: c.mood,
+        earned: Number(c.points) || 0,
+      })),
+      totalEarned: Number(legacy.totalPoints) || 0,
+      earnedFromCheckins: Number(legacy.ptsFromCheckins) || 0,
+      earnedFromStreaks: Number(legacy.ptsFromStreaks) || 0,
+      longestStreak: legacy.longestStreak || 0,
+    };
+    try {
+      localStorage.setItem(STATE_KEY, JSON.stringify(migrated));
+    } catch (e) {}
+    return migrated;
   }
 
   function saveState() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
@@ -1103,21 +1130,21 @@
 
   function getLevel() {
     for (let i = LEVELS.length - 1; i >= 0; i--) {
-      if (state.totalPoints >= LEVELS[i].points) return i;
+      if (state.totalEarned >= LEVELS[i].earned) return i;
     }
     return 0;
   }
 
   function getLevelProgress() {
     const lvl = getLevel();
-    const current = LEVELS[lvl].points;
-    const next = lvl < LEVELS.length - 1 ? LEVELS[lvl + 1].points : current;
-    const progress = lvl < LEVELS.length - 1 ? ((state.totalPoints - current) / (next - current)) * 100 : 100;
+    const current = LEVELS[lvl].earned;
+    const next = lvl < LEVELS.length - 1 ? LEVELS[lvl + 1].earned : current;
+    const progress = lvl < LEVELS.length - 1 ? ((state.totalEarned - current) / (next - current)) * 100 : 100;
     return { lvl, progress: Math.min(progress, 100), current, next };
   }
 
   function getUnlockedAchievements() {
-    const stats = { total: state.checkins.length, longestStreak: state.longestStreak, totalPoints: state.totalPoints };
+    const stats = { total: state.checkins.length, longestStreak: state.longestStreak, totalEarned: state.totalEarned };
     return ACHIEVEMENTS.filter(a => a.req(stats));
   }
 
@@ -1290,7 +1317,7 @@
           id: NOTIF_REMINDER_ID,
           title: '⏰ CashSpark Reminder',
           body: "Don't forget to check in today! 🔥",
-          largeBody: "You have a streak to maintain! Open CashSpark to check in and earn Spark Points. ⚡",
+          largeBody: "You have a streak to maintain! Open CashSpark to check in and earn ₹ rewards. ⚡",
           summaryText: 'Daily check-in reminder',
           schedule: {
             on: { hour: hours, minute: minutes },
@@ -1366,24 +1393,24 @@
   function handleCheckin() {
     if (todayCheckedIn()) return;
     const mood = selectedMood || '😄';
-    const basePoints = 10;
+    const baseReward = 10;
     const streak = getStreak();
     const streakBonus = Math.min(streak * 2, 20);
-    const totalPts = basePoints + streakBonus;
-    state.checkins.push({ date: todayStr(), mood, points: totalPts });
-    state.totalPoints += totalPts;
-    state.ptsFromCheckins += basePoints;
-    state.ptsFromStreaks += streakBonus;
+    const totalReward = baseReward + streakBonus;
+    state.checkins.push({ date: todayStr(), mood, earned: totalReward });
+    state.totalEarned += totalReward;
+    state.earnedFromCheckins += baseReward;
+    state.earnedFromStreaks += streakBonus;
     const curStreak = getStreak();
     if (curStreak > state.longestStreak) state.longestStreak = curStreak;
     saveState();
     renderAll();
     playCheckinSound();
-    showToast(`+${totalPts} Spark Points! ⚡`, '🎉');
+    showToast(`+₹${totalReward} Earned! ⚡`, '🎉');
     spawnConfetti();
     const unlocked = getUnlockedAchievements();
     const prevUnlocked = ACHIEVEMENTS.filter(a => a.req({
-      total: state.checkins.length - 1, longestStreak: state.longestStreak, totalPoints: state.totalPoints - totalPts,
+      total: state.checkins.length - 1, longestStreak: state.longestStreak, totalEarned: state.totalEarned - totalReward,
     }));
     if (unlocked.length > prevUnlocked.length) {
       const newAch = unlocked.find(a => !prevUnlocked.includes(a));
@@ -1397,10 +1424,10 @@
     if (idx === -1) return;
     const removed = state.checkins[idx];
     state.checkins.splice(idx, 1);
-    state.totalPoints -= removed.points;
-    // Recalculate ptsFromCheckins and ptsFromStreaks
-    state.ptsFromCheckins = state.checkins.reduce((sum, c) => sum + Math.min(c.points, 10), 0);
-    state.ptsFromStreaks = state.checkins.reduce((sum, c) => sum + Math.max(c.points - 10, 0), 0);
+    state.totalEarned -= removed.earned;
+    // Recalculate earnedFromCheckins and earnedFromStreaks
+    state.earnedFromCheckins = state.checkins.reduce((sum, c) => sum + Math.min(c.earned, 10), 0);
+    state.earnedFromStreaks = state.checkins.reduce((sum, c) => sum + Math.max(c.earned - 10, 0), 0);
     // Recalculate longest streak via consecutive days
     const sorted = [...state.checkins].sort((a, b) => b.date.localeCompare(a.date));
     let maxStreak = sorted.length > 0 ? 1 : 0;
@@ -1538,30 +1565,30 @@
     // Stats
     document.getElementById('totalCheckins').textContent = total;
     document.getElementById('currStreak').textContent = streak;
-    document.getElementById('totalPoints').textContent = state.totalPoints;
+    document.getElementById('totalEarned').textContent = '₹' + state.totalEarned;
 
-    // Points card
-    document.getElementById('pointsAmount').textContent = state.totalPoints;
-    document.getElementById('ptsCheckin').textContent = state.ptsFromCheckins;
-    document.getElementById('ptsStreak').textContent = state.ptsFromStreaks;
+    // Earned card
+    document.getElementById('earnedAmount').textContent = '₹' + state.totalEarned;
+    document.getElementById('earnedCheckin').textContent = '₹' + state.earnedFromCheckins;
+    document.getElementById('earnedStreak').textContent = '₹' + state.earnedFromStreaks;
 
     // Level
     document.getElementById('levelDisplay').textContent = lvl + 1;
     document.getElementById('levelEmoji').textContent = LEVELS[lvl].emoji;
     document.getElementById('rankName').textContent = LEVELS[lvl].name;
     document.getElementById('levelBar').style.width = lvlInfo.progress + '%';
-    document.getElementById('levelProgress').textContent = `${state.totalPoints - lvlInfo.current} / ${lvlInfo.next - lvlInfo.current}`;
+    document.getElementById('levelProgress').textContent = `${state.totalEarned - lvlInfo.current} / ${lvlInfo.next - lvlInfo.current}`;
     document.getElementById('levelPercent').textContent = Math.round(lvlInfo.progress) + '%';
 
     // Next level
     const nextLvl = lvl < LEVELS.length - 1 ? lvl + 1 : lvl;
     document.getElementById('nextLevelIcon').textContent = LEVELS[nextLvl].icon;
     document.getElementById('nextLevelName').textContent = LEVELS[nextLvl].name;
-    const needed = lvl < LEVELS.length - 1 ? LEVELS[nextLvl].points - state.totalPoints : 0;
-    document.getElementById('nextLevelReq').textContent = needed > 0 ? `${needed} more points needed` : 'Max level!';
+    const needed = lvl < LEVELS.length - 1 ? LEVELS[nextLvl].earned - state.totalEarned : 0;
+    document.getElementById('nextLevelReq').textContent = needed > 0 ? `₹${needed} more to level up` : 'Max level!';
     document.getElementById('nextLevelBar').style.width = lvlInfo.progress + '%';
     document.getElementById('nextLevelProgress').textContent = needed > 0
-      ? `${state.totalPoints - lvlInfo.current} / ${LEVELS[nextLvl].points - lvlInfo.current}` : 'MAX';
+      ? `${state.totalEarned - lvlInfo.current} / ${LEVELS[nextLvl].earned - lvlInfo.current}` : 'MAX';
 
     document.getElementById('userLevel').textContent = lvl + 1;
 
@@ -1592,7 +1619,7 @@
         const isToday = c.date === todayStr();
         const el = document.createElement('div');
         el.className = 'activity-item';
-        el.innerHTML = `<span class="emoji">${c.mood}</span><span>${isToday ? 'Today' : dateLabel}</span><span class="pts">+${c.points} pts</span><span class="time">${c.date}</span>`;
+        el.innerHTML = `<span class="emoji">${c.mood}</span><span>${isToday ? 'Today' : dateLabel}</span><span class="amt">+₹${c.earned}</span><span class="time">${c.date}</span>`;
         log.appendChild(el);
       });
     }
@@ -1717,7 +1744,7 @@
         <span class="h-mood">${c.mood}</span>
         <span class="date">${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
         <span style="font-size:12px;color:var(--text-muted);">${c.date}</span>
-        <span class="h-pts">+${c.points}</span>
+        <span class="h-amt">+₹${c.earned}</span>
       `;
       list.appendChild(el);
     });

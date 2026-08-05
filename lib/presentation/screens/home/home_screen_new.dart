@@ -1,5 +1,6 @@
 import 'package:cashspark/core/theme/app_theme.dart';
 import 'package:cashspark/core/widgets/adsense_banner.dart';
+import 'package:cashspark/core/widgets/native_ad_view.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/domain/entities/notification_entity.dart';
 import 'package:cashspark/presentation/providers/auth_provider.dart';
@@ -70,6 +71,8 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildWithdrawButton(isDark),
               SizedBox(height: rs.spaceLg),
               const AdSenseBanner(adSlot: '6222511573', height: 110),
+              SizedBox(height: rs.spaceLg),
+              const NativeAdView(slot: 0),
               SizedBox(height: rs.spaceLg),
               _buildRecentNotifications(isDark),
             ],
@@ -364,9 +367,9 @@ class _HomeScreenState extends State<HomeScreen> {
       height: rs.height(52),
       child: ElevatedButton.icon(
         onPressed: () => Navigator.pushNamed(context, AppRouter.withdrawals),
-        icon: Icon(Icons.redeem_rounded, size: rs.iconSm),
+        icon: Icon(Icons.payments_outlined, size: rs.iconSm),
         label: Text(
-          'Redeem Rewards',
+          'Withdraw Funds',
           style: rs.button,
         ),
         style: ElevatedButton.styleFrom(

@@ -292,7 +292,7 @@ class _ContactSupportScreenState extends State<ContactSupportScreen> {
   String _categoryLabel(TicketCategory cat) {
     switch (cat) {
       case TicketCategory.account: return 'Account';
-      case TicketCategory.withdrawal: return 'Redemption';
+      case TicketCategory.withdrawal: return 'Withdrawal';
       case TicketCategory.task: return 'Task';
       case TicketCategory.reward: return 'Reward';
       case TicketCategory.referral: return 'Referral';

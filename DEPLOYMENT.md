@@ -105,7 +105,7 @@ CashSpark monetizes with the **CPX Research** offer wall (paid surveys). Survey 
    > **Blaze-plan alternative:** if you ever upgrade, `functions/cpx.js` + the `cpxPostback` function in `functions/index.js` provide the same endpoint as a Cloud Function at `https://us-central1-cashspark-c15bd.cloudfunctions.net/cpxPostback` (set `cpx.secret` via `firebase functions:config:set`).
 
 ### Notes
-- **Payouts are 1:1** — the CPX `amount` is credited to the wallet as points.
+- **Payouts are 1:1** — the CPX `amount` is credited to the wallet in ₹ (rupees).
 - **Hash verification** accepts CPX's documented `md5("{value}-{secret}")` style plus common concatenations of `transaction_id`/`user_id`/`amount` with the secret (amount is normalised to strip trailing zeros). If CPX's exact formula differs for your account, confirm it in the dashboard's Postback tab — only the concatenation order changes, the secret is the same. The server logs which format matched, so check Render logs when testing.
 - **Idempotency**: each `transaction_id` is credited once — the guard is checked **inside** the Firestore transaction, so even concurrent duplicate postbacks can't double-credit. CPX retries after a 500 are safe.
 - **No secret configured**: the endpoint returns `503` until `CPX_SECRET` is set. Unsigned postbacks are rejected (`403`) by default (`CPX_ALLOW_UNSIGNED=true` for dev only).

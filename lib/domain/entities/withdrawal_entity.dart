@@ -1,6 +1,4 @@
-/// Redemption methods — in-platform perks only (no cash payouts).
-/// Aligned with AdSense policy: rewards have no real-world monetary value.
-enum RedemptionMethod { premiumWeek, premiumMonth, extraSpins, themeUnlock, boosterPack }
+enum WithdrawalMethod { upi, upiId, paytm }
 
 enum WithdrawalStatus { pending, paid, approved, rejected }
 
@@ -8,7 +6,7 @@ class WithdrawalEntity {
   final String withdrawalId;
   final String userId;
   final double amount;
-  final RedemptionMethod method;
+  final WithdrawalMethod method;
   final String accountDetails;
   final String? qrCodeUrl;
   final String? userName;
@@ -43,7 +41,7 @@ class WithdrawalEntity {
     String? withdrawalId,
     String? userId,
     double? amount,
-    RedemptionMethod? method,
+    WithdrawalMethod? method,
     String? accountDetails,
     String? qrCodeUrl,
     String? userName,

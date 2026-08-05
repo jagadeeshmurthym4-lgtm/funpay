@@ -37,8 +37,8 @@ class WithdrawalProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get successMessage => _successMessage;
 
-  double get minRedemptionAmount =>
-      WithdrawalRepositoryImpl.minRedemptionAmount;
+  double get minWithdrawalAmount =>
+      WithdrawalRepositoryImpl.minWithdrawalAmount;
 
   void setQrCodeUrl(String? url) {
     _qrCodeUrl = url;
@@ -88,7 +88,7 @@ class WithdrawalProvider extends ChangeNotifier {
           await _withdrawalRepository.hasPendingWithdrawal(userId);
       listenToUserWithdrawals(userId);
     } catch (e) {
-      _errorMessage = 'Failed to initialize redemptions';
+      _errorMessage = 'Failed to initialize withdrawals';
     } finally {
       _setLoading(false);
     }
@@ -100,7 +100,7 @@ class WithdrawalProvider extends ChangeNotifier {
     try {
       listenToAllWithdrawals(status: status);
     } catch (e) {
-      _errorMessage = 'Failed to load redemption requests';
+      _errorMessage = 'Failed to load withdrawal requests';
     } finally {
       _setLoading(false);
     }
@@ -179,7 +179,7 @@ class WithdrawalProvider extends ChangeNotifier {
   Future<bool> requestWithdrawal({
     required String userId,
     required double amount,
-    required RedemptionMethod method,
+    required WithdrawalMethod method,
     required String accountDetails,
     String? qrCodeUrl,
     String? userName,
@@ -202,7 +202,7 @@ class WithdrawalProvider extends ChangeNotifier {
         walletBalanceAtRequest: walletBalanceAtRequest,
       );
       _successMessage =
-          'Redemption request of ₹${amount.toStringAsFixed(2)} submitted!';
+          'Withdrawal request of ₹${amount.toStringAsFixed(2)} submitted!';
       _hasPendingWithdrawal = true;
       notifyListeners();
       return true;
@@ -213,7 +213,7 @@ class WithdrawalProvider extends ChangeNotifier {
       _errorMessage = e.message;
       return false;
     } catch (e) {
-      _errorMessage = 'Failed to submit redemption request';
+      _errorMessage = 'Failed to submit withdrawal request';
       return false;
     } finally {
       _setSubmitting(false);
@@ -233,7 +233,7 @@ class WithdrawalProvider extends ChangeNotifier {
             transactionId: transactionId,
           );
       _selectedWithdrawal = withdrawal;
-      _successMessage = 'Redemption marked as granted!';
+      _successMessage = 'Withdrawal marked as paid!';
       notifyListeners();
       return true;
     } on WithdrawalException catch (e) {
@@ -261,7 +261,7 @@ class WithdrawalProvider extends ChangeNotifier {
             transactionId: transactionId,
           );
       _selectedWithdrawal = withdrawal;
-      _successMessage = 'Redemption approved successfully';
+      _successMessage = 'Withdrawal approved successfully';
       notifyListeners();
       return true;
     } on WithdrawalException catch (e) {
@@ -289,7 +289,7 @@ class WithdrawalProvider extends ChangeNotifier {
             remarks: remarks,
           );
       _selectedWithdrawal = withdrawal;
-      _successMessage = 'Redemption rejected';
+      _successMessage = 'Withdrawal rejected';
       notifyListeners();
       return true;
     } on WithdrawalException catch (e) {
@@ -313,7 +313,7 @@ class WithdrawalProvider extends ChangeNotifier {
       _selectedWithdrawal =
           await _withdrawalRepository.getWithdrawal(withdrawalId);
     } catch (e) {
-      _errorMessage = 'Failed to load redemption details';
+      _errorMessage = 'Failed to load withdrawal details';
     } finally {
       _setLoading(false);
     }

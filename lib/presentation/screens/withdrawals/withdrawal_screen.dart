@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cashspark/core/utils/helpers.dart';
 import 'package:cashspark/core/widgets/premium_widgets.dart';
 import 'package:cashspark/domain/entities/withdrawal_entity.dart';
@@ -5,14 +6,9 @@ import 'package:cashspark/presentation/providers/auth_provider.dart';
 import 'package:cashspark/presentation/providers/wallet_provider.dart';
 import 'package:cashspark/presentation/providers/withdrawal_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-/// Redeem screen.
-///
-/// Wallet balance is in-platform currency and has no real-world monetary
-/// value. Users spend it on premium features, extra spins, themes and boosters.
-/// There are NO cash payouts (UPI / Paytm / bank / QR) — this is aligned with
-/// AdSense policy, which prohibits compensating users with real money.
 class WithdrawalScreen extends StatefulWidget {
   const WithdrawalScreen({super.key});
 
@@ -51,7 +47,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
 
     return Scaffold(
       appBar: PremiumAppBar(
-        title: 'Redeem',
+        title: 'Withdrawals',
         onBack: () => Navigator.pop(context),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
@@ -71,7 +67,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
               labelColor: Colors.white,
               unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
               tabs: const [
-                Tab(text: 'Redeem'),
+                Tab(text: 'Request'),
                 Tab(text: 'History'),
               ],
             ),
@@ -99,13 +95,13 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
             return TabBarView(
               controller: _tabController,
               children: [
-                _RedeemTab(
+                _WithdrawalRequestTab(
                   withdrawalProvider: withdrawalProvider,
                   auth: auth,
                   walletProvider: walletProvider,
                   theme: theme,
                 ),
-                _RedemptionHistoryTab(
+                _WithdrawalHistoryTab(
                   withdrawals: withdrawalProvider.userWithdrawals,
                   theme: theme,
                   withdrawalProvider: withdrawalProvider,
@@ -120,488 +116,11 @@ class _WithdrawalScreenState extends State<WithdrawalScreen>
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REDEMPTION PERKS CATALOG
-// ═══════════════════════════════════════════════════════════════
-
-class _Perk {
-  final RedemptionMethod method;
-  final String title;
-  final String description;
-  final double cost;
-  final IconData icon;
-
-  const _Perk({
-    required this.method,
-    required this.title,
-    required this.description,
-    required this.cost,
-    required this.icon,
-  });
-}
-
-const List<_Perk> _perks = [
-  _Perk(
-    method: RedemptionMethod.premiumWeek,
-    title: 'Premium (1 Week)',
-    description: 'Unlock all premium features for 7 days',
-    cost: 500,
-    icon: Icons.workspace_premium_rounded,
-  ),
-  _Perk(
-    method: RedemptionMethod.premiumMonth,
-    title: 'Premium (1 Month)',
-    description: 'Unlock all premium features for 30 days',
-    cost: 1500,
-    icon: Icons.diamond_rounded,
-  ),
-  _Perk(
-    method: RedemptionMethod.extraSpins,
-    title: 'Bonus Spins',
-    description: '10 extra spins on the Lucky Wheel',
-    cost: 300,
-    icon: Icons.casino_rounded,
-  ),
-  _Perk(
-    method: RedemptionMethod.themeUnlock,
-    title: 'Exclusive Theme',
-    description: 'Unlock a limited-edition app theme',
-    cost: 400,
-    icon: Icons.palette_rounded,
-  ),
-  _Perk(
-    method: RedemptionMethod.boosterPack,
-    title: 'Booster Pack',
-    description: 'Scratch card + spin boosters bundle',
-    cost: 200,
-    icon: Icons.rocket_launch_rounded,
-  ),
-];
-
-// ═══════════════════════════════════════════════════════════════
-// REDEEM TAB
-// ═══════════════════════════════════════════════════════════════
-
-class _RedeemTab extends StatefulWidget {
-  final WithdrawalProvider withdrawalProvider;
-  final AuthProvider auth;
-  final WalletProvider walletProvider;
-  final ThemeData theme;
-
-  const _RedeemTab({
-    required this.withdrawalProvider,
-    required this.auth,
-    required this.walletProvider,
-    required this.theme,
-  });
-
-  @override
-  State<_RedeemTab> createState() => _RedeemTabState();
-}
-
-class _RedeemTabState extends State<_RedeemTab> {
-  bool _showSuccessAnimation = false;
-
-  Future<void> _submitRedemption(_Perk perk) async {
-    final wp = widget.withdrawalProvider;
-    final user = widget.auth.user;
-    final userId = user?.uid;
-    if (userId == null) return;
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: PremiumCard(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: widget.theme.colorScheme.primary.withValues(alpha: 0.1),
-                ),
-                child: Icon(perk.icon,
-                    color: widget.theme.colorScheme.primary, size: 28),
-              ),
-              const SizedBox(height: 16),
-              Text('Redeem ${perk.title}',
-                  style: widget.theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              Text(
-                'Spend ₹${perk.cost.toStringAsFixed(0)} to redeem\\n${perk.description.toLowerCase()}?',
-                textAlign: TextAlign.center,
-                style: widget.theme.textTheme.bodyMedium?.copyWith(
-                    color: widget.theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your balance is in-platform only and has no cash value.',
-                textAlign: TextAlign.center,
-                style: widget.theme.textTheme.bodySmall?.copyWith(
-                    color: widget.theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Redeem'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      await wp.requestWithdrawal(
-        userId: userId,
-        amount: perk.cost,
-        method: perk.method,
-        accountDetails: perk.title,
-        userName: user?.fullName,
-        userEmail: user?.email,
-        userPhone: user?.phone,
-        walletBalanceAtRequest: widget.walletProvider.wallet?.walletBalance ?? user?.walletBalance ?? 0.0,
-      );
-      if (mounted) setState(() => _showSuccessAnimation = true);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final wp = widget.withdrawalProvider;
-    final user = widget.auth.user;
-    final balance = widget.walletProvider.wallet?.walletBalance ?? user?.walletBalance ?? 0.0;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Error/Success banners
-          if (wp.errorMessage != null)
-            _buildBanner(
-              message: wp.errorMessage!,
-              isError: true,
-              onDismiss: wp.clearError,
-            ),
-          if (wp.successMessage != null)
-            _buildBanner(
-              message: wp.successMessage!,
-              isError: false,
-              onDismiss: wp.clearSuccess,
-            ),
-
-          // Success animation overlay
-          Stack(
-            children: [
-              // Balance card
-              PremiumCard(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: widget.theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(Icons.stars_rounded,
-                          color: widget.theme.colorScheme.primary, size: 26),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Your Balance',
-                              style: widget.theme.textTheme.bodySmall?.copyWith(
-                                  color: widget.theme.colorScheme.onSurfaceVariant)),
-                          const SizedBox(height: 4),
-                          Text(
-                            '₹${balance.toStringAsFixed(2)}',
-                            style: widget.theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: widget.theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: widget.theme.colorScheme.tertiary.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'No cash value',
-                        style: widget.theme.textTheme.labelSmall?.copyWith(
-                          color: widget.theme.colorScheme.tertiary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (_showSuccessAnimation)
-                Positioned.fill(
-                  child: _SuccessAnimationOverlay(
-                    theme: widget.theme,
-                    onComplete: () {
-                      if (mounted) setState(() => _showSuccessAnimation = false);
-                    },
-                  ),
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Info card
-          PremiumCard(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 18,
-                        color: widget.theme.colorScheme.primary),
-                    const SizedBox(width: 8),
-                    Text('How it works',
-                        style: widget.theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Spend your balance on in-platform perks like Premium access, bonus spins, exclusive themes and boosters. Your balance has no real-world monetary value and cannot be converted to cash.',
-                  style: widget.theme.textTheme.bodySmall?.copyWith(
-                      color: widget.theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          if (wp.hasPendingWithdrawal)
-            PremiumGlass(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(12),
-              gradient: LinearGradient(colors: [
-                widget.theme.colorScheme.tertiary.withValues(alpha: 0.12),
-                widget.theme.colorScheme.tertiary.withValues(alpha: 0.04),
-              ]),
-              child: Row(
-                children: [
-                  Icon(Icons.hourglass_top_rounded,
-                      color: widget.theme.colorScheme.tertiary, size: 20),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'You have a pending redemption request. You can submit a new one once it is processed.',
-                      style: widget.theme.textTheme.bodySmall?.copyWith(
-                        color: widget.theme.colorScheme.tertiary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          // Perks grid
-          Text('Available Perks',
-              style: widget.theme.textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          ..._perks.map((perk) => _PerkCard(
-                perk: perk,
-                theme: widget.theme,
-                enabled: !wp.isSubmitting && !wp.hasPendingWithdrawal,
-                onTap: () => _submitRedemption(perk),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBanner({
-    required String message,
-    required bool isError,
-    required VoidCallback onDismiss,
-  }) {
-    return PremiumGlass(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      gradient: LinearGradient(colors: [
-        isError
-            ? widget.theme.colorScheme.error.withValues(alpha: 0.15)
-            : widget.theme.colorScheme.tertiary.withValues(alpha: 0.15),
-        isError
-            ? widget.theme.colorScheme.error.withValues(alpha: 0.05)
-            : widget.theme.colorScheme.tertiary.withValues(alpha: 0.05),
-      ]),
-      child: Row(
-        children: [
-          Icon(
-            isError ? Icons.error_outline : Icons.check_circle,
-            color: isError
-                ? widget.theme.colorScheme.error
-                : widget.theme.colorScheme.tertiary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: widget.theme.textTheme.bodyMedium?.copyWith(
-                color: isError
-                    ? widget.theme.colorScheme.error
-                    : widget.theme.colorScheme.onTertiaryContainer,
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, size: 18,
-                color: isError
-                    ? widget.theme.colorScheme.error
-                    : widget.theme.colorScheme.onTertiaryContainer),
-            onPressed: onDismiss,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// PERK CARD
-// ═══════════════════════════════════════════════════════════════
-
-class _PerkCard extends StatelessWidget {
-  final _Perk perk;
-  final ThemeData theme;
-  final bool enabled;
-  final VoidCallback onTap;
-
-  const _PerkCard({
-    required this.perk,
-    required this.theme,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: PremiumGlass(
-        padding: const EdgeInsets.all(16),
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: BorderRadius.circular(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(perk.icon, color: theme.colorScheme.primary, size: 24),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(perk.title,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 3),
-                    Text(
-                      perk.description,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '₹${perk.cost.toStringAsFixed(0)}',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Redeem',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════
 // SUCCESS ANIMATION OVERLAY
 // ═══════════════════════════════════════════════════════════════
 
+/// A premium success overlay with a scale-in, circular progress + checkmark draw animation.
+/// Shows for ~2 seconds then dismisses itself.
 class _SuccessAnimationOverlay extends StatefulWidget {
   final VoidCallback onComplete;
   final ThemeData theme;
@@ -682,7 +201,7 @@ class _SuccessAnimationOverlayState extends State<_SuccessAnimationOverlay>
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Redemption Requested!',
+                        'QR Code Uploaded!',
                         style: widget.theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: widget.theme.colorScheme.tertiary,
@@ -690,7 +209,7 @@ class _SuccessAnimationOverlayState extends State<_SuccessAnimationOverlay>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Balance will be deducted after approval',
+                        'Ready for withdrawals',
                         style: widget.theme.textTheme.bodySmall?.copyWith(
                           color: widget.theme.colorScheme.onSurfaceVariant,
                         ),
@@ -779,15 +298,946 @@ class _CheckmarkPainter extends CustomPainter {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// REDEMPTION HISTORY TAB
+// QR CODE CARD
 // ═══════════════════════════════════════════════════════════════
 
-class _RedemptionHistoryTab extends StatelessWidget {
+class _QrCodeCard extends StatelessWidget {
+  final String userId;
+  final String? qrCodeUrl;
+  final bool isUploading;
+  final VoidCallback onUpload;
+  final VoidCallback onReplace;
+  final VoidCallback onDelete;
+  final VoidCallback onPreview;
+  final ThemeData theme;
+
+  const _QrCodeCard({
+    required this.userId,
+    this.qrCodeUrl,
+    required this.isUploading,
+    required this.onUpload,
+    required this.onReplace,
+    required this.onDelete,
+    required this.onPreview,
+    required this.theme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PremiumCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.qr_code_scanner_rounded,
+                    color: theme.colorScheme.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('UPI QR Code',
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      qrCodeUrl != null
+                          ? 'QR Code ready for withdrawals'
+                          : 'Upload your UPI QR code to withdraw',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // QR Code preview or upload area
+          if (isUploading)
+            Container(
+              height: 180,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 36,
+                      height: 36,
+                      child: CircularProgressIndicator(strokeWidth: 3),
+                    ),
+                    SizedBox(height: 12),
+                    Text('Uploading QR Code...'),
+                  ],
+                ),
+              ),
+            )
+          else if (qrCodeUrl != null)
+            GestureDetector(
+              onTap: onPreview,
+              child: Container(
+                height: 160,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.2),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CachedNetworkImage(
+                        imageUrl: qrCodeUrl!,
+                        fit: BoxFit.contain,
+                        placeholder: (_, __) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (_, __, ___) => Container(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.broken_image_outlined, size: 32,
+                                  color: theme.colorScheme.error),
+                              const SizedBox(height: 4),
+                              Text('Failed to load',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.error)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Tap to zoom hint
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.zoom_in, color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          else
+            Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: InkWell(
+                onTap: onUpload,
+                borderRadius: BorderRadius.circular(16),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.cloud_upload_outlined,
+                          size: 40, color: theme.colorScheme.primary),
+                      const SizedBox(height: 8),
+                      Text('Tap to Upload UPI QR Code',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          )),
+                      const SizedBox(height: 4),
+                      Text('PNG, JPG or JPEG • Max 5 MB',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          if (qrCodeUrl != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onReplace,
+                    icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                    label: const Text('Replace'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onPreview,
+                    icon: const Icon(Icons.zoom_in_rounded, size: 18),
+                    label: const Text('Preview'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                    label: const Text('Delete'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.5)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WITHDRAWAL REQUEST TAB
+// ═══════════════════════════════════════════════════════════════
+
+class _WithdrawalRequestTab extends StatefulWidget {
+  final WithdrawalProvider withdrawalProvider;
+  final AuthProvider auth;
+  final WalletProvider walletProvider;
+  final ThemeData theme;
+
+  const _WithdrawalRequestTab({
+    required this.withdrawalProvider,
+    required this.auth,
+    required this.walletProvider,
+    required this.theme,
+  });
+
+  @override
+  State<_WithdrawalRequestTab> createState() => _WithdrawalRequestTabState();
+}
+
+class _WithdrawalRequestTabState extends State<_WithdrawalRequestTab> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  final _accountDetailsController = TextEditingController();
+  final _picker = ImagePicker();
+  WithdrawalMethod _selectedMethod = WithdrawalMethod.upi;
+  bool _showSuccessAnimation = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set QR code URL from user profile
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = widget.auth;
+      if (auth.user?.upiQrCodeUrl != null) {
+        widget.withdrawalProvider.setQrCodeUrl(auth.user!.upiQrCodeUrl!);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _accountDetailsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUploadQr() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image == null) return;
+
+      final userId = widget.auth.user?.uid;
+      if (userId == null) return;
+
+      final success = await widget.withdrawalProvider.uploadQrCode(
+        userId: userId,
+        imageFile: image,
+      );
+
+      if (success && mounted) {
+        // Update the user's profile with the QR code URL and timestamps
+        final wp = widget.withdrawalProvider;
+        if (wp.qrCodeUrl != null) {
+          final now = DateTime.now();
+          final userId = widget.auth.user?.uid;
+          await widget.auth.updateProfile(
+            upiQrCodeUrl: wp.qrCodeUrl,
+            qrCodeUploadedAt: now,
+            qrCodeUpdatedAt: now,
+            qrCodeUploadedBy: userId,
+          );
+        }
+        // Show success animation overlay
+        setState(() => _showSuccessAnimation = true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteQr() async {
+    final userId = widget.auth.user?.uid;
+    if (userId == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: PremiumCard(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.theme.colorScheme.error.withValues(alpha: 0.1),
+                ),
+                child: Icon(Icons.delete_outline_rounded,
+                    color: widget.theme.colorScheme.error, size: 28),
+              ),
+              const SizedBox(height: 16),
+              Text('Delete QR Code?',
+                  style: widget.theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(
+                'Your UPI QR Code will be removed. You cannot withdraw until you upload a new one.',
+                textAlign: TextAlign.center,
+                style: widget.theme.textTheme.bodyMedium?.copyWith(
+                    color: widget.theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: widget.theme.colorScheme.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Delete'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success = await widget.withdrawalProvider.deleteQrCode(userId: userId);
+      if (success && mounted) {
+        await widget.auth.updateProfile(
+          upiQrCodeUrl: null,
+          qrCodeUploadedAt: null,
+          qrCodeUpdatedAt: null,
+          qrCodeUploadedBy: null,
+        );
+      }
+    }
+  }
+
+  void _showQrPreview() {
+    final url = widget.withdrawalProvider.qrCodeUrl;
+    if (url == null) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => Container(
+                      height: 300,
+                      color: widget.theme.colorScheme.surfaceContainerHighest,
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      height: 300,
+                      color: widget.theme.colorScheme.surfaceContainerHighest,
+                      child: const Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.broken_image_outlined, size: 48),
+                          Text('Failed to load image'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 4,
+              top: 4,
+              child: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitRequest() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final wp = widget.withdrawalProvider;
+    final user = widget.auth.user;
+    final userId = user?.uid;
+    if (userId == null) return;
+
+    final amount = double.tryParse(_amountController.text) ?? 0;
+    final accountDetails = _accountDetailsController.text.trim();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: PremiumCard(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: widget.theme.colorScheme.primary.withValues(alpha: 0.1),
+                ),
+                child: Icon(Icons.payments_outlined,
+                    color: widget.theme.colorScheme.primary, size: 28),
+              ),
+              const SizedBox(height: 16),
+              Text('Confirm Withdrawal',
+                  style: widget.theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(
+                'Are you sure you want to withdraw\n₹${amount.toStringAsFixed(2)} via ${_methodDisplayName()}?',
+                textAlign: TextAlign.center,
+                style: widget.theme.textTheme.bodyMedium?.copyWith(
+                    color: widget.theme.colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 12),
+              if (_selectedMethod == WithdrawalMethod.upi && wp.qrCodeUrl != null)
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: widget.theme.colorScheme.primary.withValues(alpha: 0.2)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: CachedNetworkImage(
+                      imageUrl: wp.qrCodeUrl!,
+                      fit: BoxFit.contain,
+                      placeholder: (_, __) => const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Confirm'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await wp.requestWithdrawal(
+        userId: userId,
+        amount: amount,
+        method: _selectedMethod,
+        accountDetails: _selectedMethod == WithdrawalMethod.upi
+            ? 'UPI QR Code'
+            : accountDetails,
+        qrCodeUrl: _selectedMethod == WithdrawalMethod.upi ? wp.qrCodeUrl : null,
+        userName: user?.fullName,
+        userEmail: user?.email,
+        userPhone: user?.phone,
+        walletBalanceAtRequest: widget.walletProvider.wallet?.walletBalance ?? user?.walletBalance ?? 0.0,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wp = widget.withdrawalProvider;
+    final user = widget.auth.user;
+    final hasQrCode = wp.qrCodeUrl != null;
+    final needsQrCode = _selectedMethod == WithdrawalMethod.upi;
+    final canSubmit = !wp.isSubmitting &&
+        !wp.hasPendingWithdrawal &&
+        (!needsQrCode || hasQrCode);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Error/Success banners
+          if (wp.errorMessage != null)
+            _buildBanner(
+              message: wp.errorMessage!,
+              isError: true,
+              onDismiss: wp.clearError,
+            ),
+          if (wp.successMessage != null)
+            _buildBanner(
+              message: wp.successMessage!,
+              isError: false,
+              onDismiss: wp.clearSuccess,
+            ),
+
+          // QR Code Card with success animation overlay
+          Stack(
+            children: [
+              _QrCodeCard(
+                userId: user?.uid ?? '',
+                qrCodeUrl: wp.qrCodeUrl,
+                isUploading: wp.isQrUploading,
+                onUpload: _pickAndUploadQr,
+                onReplace: _pickAndUploadQr,
+                onDelete: _deleteQr,
+                onPreview: _showQrPreview,
+                theme: widget.theme,
+              ),
+              if (_showSuccessAnimation)
+                Positioned.fill(
+                  child: _SuccessAnimationOverlay(
+                    theme: widget.theme,
+                    onComplete: () {
+                      if (mounted) setState(() => _showSuccessAnimation = false);
+                    },
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Limits Card
+          PremiumCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 18,
+                        color: widget.theme.colorScheme.primary),
+                    const SizedBox(width: 8),
+                    Text('Withdrawal Info',
+                        style: widget.theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _LimitRow(
+                  label: 'Minimum Amount',
+                  value: '₹${wp.minWithdrawalAmount.toStringAsFixed(2)}',
+                  theme: widget.theme,
+                ),
+                const SizedBox(height: 8),
+                _LimitRow(
+                  label: 'Wallet Balance',
+                  value: '₹${(widget.walletProvider.wallet?.walletBalance ?? user?.walletBalance ?? 0).toStringAsFixed(2)}',
+                  theme: widget.theme,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Withdrawal Form
+          PremiumCard(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Request Withdrawal',
+                      style: widget.theme.textTheme.titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 20),
+
+                  // Amount
+                  TextFormField(
+                    controller: _amountController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Amount',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      hintText: 'Enter amount',
+                      filled: true,
+                      fillColor: widget.theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.3),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter an amount';
+                      }
+                      final amount = double.tryParse(value);
+                      if (amount == null || amount <= 0) {
+                        return 'Enter a valid amount';
+                      }
+                      if (amount < wp.minWithdrawalAmount) {
+                        return 'Minimum withdrawal is ₹${wp.minWithdrawalAmount.toStringAsFixed(2)}';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Withdrawal Method (UPI QR is default, other methods available)
+                  DropdownButtonFormField<WithdrawalMethod>(
+                    value: _selectedMethod,
+                    decoration: InputDecoration(
+                      labelText: 'Withdrawal Method',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      filled: true,
+                      fillColor: widget.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: WithdrawalMethod.upi,
+                        child: Row(
+                          children: [
+                            Icon(Icons.qr_code_scanner_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('UPI (QR Code)'),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: WithdrawalMethod.upiId,
+                        child: Row(
+                          children: [
+                            Icon(Icons.person_outline, size: 18),
+                            SizedBox(width: 8),
+                            Text('UPI ID'),
+                          ],
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: WithdrawalMethod.paytm,
+                        child: Row(
+                          children: [
+                            Icon(Icons.account_balance_wallet_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('Paytm'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => _selectedMethod = value);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Account Details — hidden when using UPI (QR Code)
+                  if (_selectedMethod != WithdrawalMethod.upi)
+                    TextFormField(
+                      controller: _accountDetailsController,
+                      decoration: InputDecoration(
+                        labelText: _getAccountLabel(),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        hintText: _getAccountHint(),
+                        filled: true,
+                        fillColor: widget.theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.3),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter your ${_getAccountLabel().toLowerCase()}';
+                        }
+                        return null;
+                      },
+                    ),
+                  const SizedBox(height: 24),
+
+                  // Submit Button
+                  GradientButton(
+                    onPressed: canSubmit ? _submitRequest : null,
+                    label: needsQrCode && !hasQrCode
+                        ? 'Upload QR Code First'
+                        : wp.hasPendingWithdrawal
+                            ? 'Pending Request Exists'
+                            : wp.isSubmitting
+                                ? 'Submitting...'
+                                : 'Submit Withdrawal Request',
+                    isLoading: wp.isSubmitting,
+                    icon: Icons.send_rounded,
+                  ),
+
+                  if (needsQrCode && !hasQrCode)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Please upload your UPI QR Code before requesting a withdrawal.',
+                        style: widget.theme.textTheme.bodySmall?.copyWith(
+                          color: widget.theme.colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  if (wp.hasPendingWithdrawal)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'You have a pending withdrawal request. Wait for it to be processed.',
+                        style: widget.theme.textTheme.bodySmall?.copyWith(
+                          color: widget.theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getAccountLabel() {
+    switch (_selectedMethod) {
+      case WithdrawalMethod.upi:
+        return 'UPI ID';
+      case WithdrawalMethod.upiId:
+        return 'UPI ID';
+      case WithdrawalMethod.paytm:
+        return 'Paytm Number';
+    }
+  }
+
+  String _getAccountHint() {
+    switch (_selectedMethod) {
+      case WithdrawalMethod.upi:
+        return 'example@upi';
+      case WithdrawalMethod.upiId:
+        return 'Enter your UPI ID';
+      case WithdrawalMethod.paytm:
+        return 'Enter your Paytm registered number';
+    }
+  }
+
+  String _methodDisplayName() {
+    switch (_selectedMethod) {
+      case WithdrawalMethod.upi:
+        return 'UPI (QR Code)';
+      case WithdrawalMethod.upiId:
+        return 'UPI ID';
+      case WithdrawalMethod.paytm:
+        return 'Paytm';
+    }
+  }
+
+  Widget _buildBanner({
+    required String message,
+    required bool isError,
+    required VoidCallback onDismiss,
+  }) {
+    return PremiumGlass(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      gradient: LinearGradient(colors: [
+        isError
+            ? widget.theme.colorScheme.error.withValues(alpha: 0.15)
+            : widget.theme.colorScheme.tertiary.withValues(alpha: 0.15),
+        isError
+            ? widget.theme.colorScheme.error.withValues(alpha: 0.05)
+            : widget.theme.colorScheme.tertiary.withValues(alpha: 0.05),
+      ]),
+      child: Row(
+        children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.check_circle,
+            color: isError
+                ? widget.theme.colorScheme.error
+                : widget.theme.colorScheme.tertiary,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: widget.theme.textTheme.bodyMedium?.copyWith(
+                color: isError
+                    ? widget.theme.colorScheme.error
+                    : widget.theme.colorScheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.close, size: 18,
+                color: isError
+                    ? widget.theme.colorScheme.error
+                    : widget.theme.colorScheme.onTertiaryContainer),
+            onPressed: onDismiss,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WITHDRAWAL HISTORY TAB
+// ═══════════════════════════════════════════════════════════════
+
+class _WithdrawalHistoryTab extends StatelessWidget {
   final List<WithdrawalEntity> withdrawals;
   final ThemeData theme;
   final WithdrawalProvider withdrawalProvider;
 
-  const _RedemptionHistoryTab({
+  const _WithdrawalHistoryTab({
     required this.withdrawals,
     required this.theme,
     required this.withdrawalProvider,
@@ -800,14 +1250,14 @@ class _RedemptionHistoryTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.redeem_rounded, size: 64,
+            Icon(Icons.receipt_long_outlined, size: 64,
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3)),
             const SizedBox(height: 16),
-            Text('No redemptions yet',
+            Text('No withdrawal requests yet',
                 style: theme.textTheme.titleMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
-            Text('Redeem your balance for in-platform perks above',
+            Text('Submit your first withdrawal request above',
                 style: theme.textTheme.bodyMedium
                     ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
           ],
@@ -826,12 +1276,12 @@ class _RedemptionHistoryTab extends StatelessWidget {
         itemCount: withdrawals.length,
         itemBuilder: (context, index) {
           final withdrawal = withdrawals[index];
-          return _RedemptionCard(
+          return _WithdrawalCard(
             withdrawal: withdrawal,
             theme: theme,
             onTap: () {
               withdrawalProvider.selectWithdrawal(withdrawal);
-              _showDetail(context, withdrawal, theme);
+              _showWithdrawalDetail(context, withdrawal, theme);
             },
           );
         },
@@ -839,7 +1289,7 @@ class _RedemptionHistoryTab extends StatelessWidget {
     );
   }
 
-  void _showDetail(
+  void _showWithdrawalDetail(
       BuildContext context, WithdrawalEntity withdrawal, ThemeData theme) {
     showModalBottomSheet(
       context: context,
@@ -848,18 +1298,18 @@ class _RedemptionHistoryTab extends StatelessWidget {
         margin: EdgeInsets.zero,
         borderRadius: 24,
         padding: const EdgeInsets.all(24),
-        child: _RedemptionDetailSheet(withdrawal: withdrawal, theme: theme),
+        child: _WithdrawalDetailSheet(withdrawal: withdrawal, theme: theme),
       ),
     );
   }
 }
 
-class _RedemptionCard extends StatelessWidget {
+class _WithdrawalCard extends StatelessWidget {
   final WithdrawalEntity withdrawal;
   final ThemeData theme;
   final VoidCallback onTap;
 
-  const _RedemptionCard({
+  const _WithdrawalCard({
     required this.withdrawal,
     required this.theme,
     required this.onTap,
@@ -879,7 +1329,7 @@ class _RedemptionCard extends StatelessWidget {
         child: Row(
           children: [
             IconContainer(
-                icon: Icons.redeem_rounded,
+                icon: Icons.phone_android_outlined,
                 color: statusColor,
                 containerSize: 44),
             const SizedBox(width: 12),
@@ -887,11 +1337,9 @@ class _RedemptionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(withdrawal.accountDetails,
+                  Text('UPI Transfer',
                       style: theme.textTheme.bodyMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                          ?.copyWith(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 2),
                   Text(
                     Helpers.formatDateTime(withdrawal.requestedAt),
@@ -909,7 +1357,7 @@ class _RedemptionCard extends StatelessWidget {
                   '-₹${withdrawal.amount.toStringAsFixed(2)}',
                   style: theme.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
+                    color: theme.colorScheme.error,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -954,7 +1402,7 @@ class _RedemptionCard extends StatelessWidget {
       case WithdrawalStatus.pending:
         return 'Pending';
       case WithdrawalStatus.paid:
-        return 'Granted';
+        return 'Paid';
       case WithdrawalStatus.approved:
         return 'Approved';
       case WithdrawalStatus.rejected:
@@ -963,11 +1411,11 @@ class _RedemptionCard extends StatelessWidget {
   }
 }
 
-class _RedemptionDetailSheet extends StatelessWidget {
+class _WithdrawalDetailSheet extends StatelessWidget {
   final WithdrawalEntity withdrawal;
   final ThemeData theme;
 
-  const _RedemptionDetailSheet({required this.withdrawal, required this.theme});
+  const _WithdrawalDetailSheet({required this.withdrawal, required this.theme});
 
   @override
   Widget build(BuildContext context) {
@@ -1016,14 +1464,14 @@ class _RedemptionDetailSheet extends StatelessWidget {
             '-₹${withdrawal.amount.toStringAsFixed(2)}',
             style: theme.textTheme.displaySmall?.copyWith(
               fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
+              color: theme.colorScheme.error,
             ),
           ),
         ),
         const SizedBox(height: 4),
         Center(
           child: Text(
-            withdrawal.accountDetails,
+            'UPI Transfer',
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
@@ -1033,19 +1481,51 @@ class _RedemptionDetailSheet extends StatelessWidget {
         const Divider(),
         const SizedBox(height: 12),
 
+        if (withdrawal.qrCodeUrl != null) ...[
+          Center(
+            child: GestureDetector(
+              onTap: () => _showQrPreviewDialog(context, withdrawal.qrCodeUrl!),
+              child: Container(
+                height: 100,
+                width: 100,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.2)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(11),
+                  child: CachedNetworkImage(
+                    imageUrl: withdrawal.qrCodeUrl!,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (_, __, ___) => const Icon(Icons.broken_image_outlined),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+
         _DetailRow(
-            label: 'Redemption ID',
+            label: 'Withdrawal ID',
             value: withdrawal.withdrawalId,
             theme: theme),
         const SizedBox(height: 8),
         _DetailRow(
-            label: 'Perk',
+            label: 'Account Details',
             value: withdrawal.accountDetails,
             theme: theme),
         const SizedBox(height: 8),
         if (withdrawal.transactionId != null) ...[
           _DetailRow(
-              label: 'Reference ID',
+              label: 'Transaction ID',
               value: withdrawal.transactionId!,
               theme: theme),
           const SizedBox(height: 8),
@@ -1075,6 +1555,60 @@ class _RedemptionDetailSheet extends StatelessWidget {
     );
   }
 
+  void _showQrPreviewDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => Container(
+                      height: 300,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child:
+                          const Center(child: CircularProgressIndicator()),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 4,
+              top: 4,
+              child: IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Color _statusColor(WithdrawalStatus status) {
     switch (status) {
       case WithdrawalStatus.pending:
@@ -1093,12 +1627,45 @@ class _RedemptionDetailSheet extends StatelessWidget {
       case WithdrawalStatus.pending:
         return 'Pending';
       case WithdrawalStatus.paid:
-        return 'Granted';
+        return 'Paid';
       case WithdrawalStatus.approved:
         return 'Approved';
       case WithdrawalStatus.rejected:
         return 'Rejected';
     }
+  }
+}
+
+class _LimitRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final ThemeData theme;
+
+  const _LimitRow(
+      {required this.label, required this.value, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(value,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
+              )),
+        ),
+      ],
+    );
   }
 }
 

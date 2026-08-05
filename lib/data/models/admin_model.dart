@@ -114,7 +114,7 @@ class AdminLogModel extends AdminLogEntity {
 class AppSettingsModel extends AppSettingsEntity {
   const AppSettingsModel({
     required super.id,
-    super.minWithdrawalAmount = 45.0,
+    super.minWithdrawalAmount = 85.0,
     super.maxWithdrawalAmount = 999999.0,
     super.dailyWithdrawalLimit = 999999.0,
     super.referrerBonus = 10.0,
@@ -169,7 +169,7 @@ class AppSettingsModel extends AppSettingsEntity {
   factory AppSettingsModel.fromFirestore(Map<String, dynamic> map) {
     return AppSettingsModel(
       id: map['id'] as String? ?? 'settings',
-      minWithdrawalAmount: (map['minWithdrawalAmount'] as num?)?.toDouble() ?? 45.0,
+      minWithdrawalAmount: (map['minWithdrawalAmount'] as num?)?.toDouble() ?? 85.0,
       maxWithdrawalAmount: (map['maxWithdrawalAmount'] as num?)?.toDouble() ?? 999999.0,
       dailyWithdrawalLimit: (map['dailyWithdrawalLimit'] as num?)?.toDouble() ?? 999999.0,
       referrerBonus: (map['referrerBonus'] as num?)?.toDouble() ?? 10.0,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:cashspark/core/theme/app_theme.dart';
+import 'package:cashspark/core/widgets/native_ad_view.dart';
 import 'package:cashspark/domain/entities/affiliate_project_entity.dart';
 import 'package:cashspark/presentation/providers/affiliate_project_provider.dart';
 import 'package:cashspark/presentation/providers/auth_provider.dart';
@@ -463,8 +464,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     debugPrint('[ProjectsScreen] Rendering ${projects.length} available projects');
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      itemCount: projects.length,
-      itemBuilder: (context, index) => _projectCard(projects[index], isDark),
+      itemCount: projects.length + 1,
+      itemBuilder: (context, index) {
+        if (index == projects.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: NativeAdView(slot: 2),
+          );
+        }
+        return _projectCard(projects[index], isDark);
+      },
     );
   }
 
@@ -803,8 +812,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
               }
               return ListView.builder(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-                itemCount: items.length,
-                itemBuilder: (context, index) => _myCard(items[index], isDark),
+                itemCount: items.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == items.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: NativeAdView(slot: 3),
+                    );
+                  }
+                  return _myCard(items[index], isDark);
+                },
               );
             },
           ),

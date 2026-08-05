@@ -108,7 +108,7 @@ class HelpCenterScreen extends StatelessWidget {
                   const Divider(height: 16),
                   _responseRow(theme, 'Account Issues', 'Within 12 hrs'),
                   const Divider(height: 16),
-                  _responseRow(theme, 'Redemption Issues', 'Within 6 hrs'),
+                  _responseRow(theme, 'Withdrawal Issues', 'Within 6 hrs'),
                   const Divider(height: 16),
                   _responseRow(theme, 'Urgent Security', 'Within 2 hrs'),
                 ],

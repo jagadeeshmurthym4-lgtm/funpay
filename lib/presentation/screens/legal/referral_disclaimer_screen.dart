@@ -115,7 +115,7 @@ class ReferralDisclaimerScreen extends StatelessWidget {
                   'If fraudulent referral activity is detected:\n\n'
                   '• Referral bonuses and commissions may be revoked without notice.\n'
                   '• The referrer\'s account may be temporarily or permanently suspended.\n'
-                  '• All unredeemed rewards and pending redemptions may be forfeited.\n'
+                  '• All unredeemed rewards and pending withdrawals may be forfeited.\n'
                   '• Fun Pay reserves the right to audit referral activity at any time.\n\n'
                   'If you believe a referral reward was incorrectly withheld, please contact our support team.',
             ),
@@ -127,7 +127,7 @@ class ReferralDisclaimerScreen extends StatelessWidget {
                   'at any time without prior notice. Changes may include:\n\n'
                   '• Reward amounts and commission rates.\n'
                   '• Eligibility criteria and program rules.\n'
-                  '• Redemption thresholds and processing timelines.\n\n'
+                  '• Payout thresholds and processing timelines.\n\n'
                   'Your continued participation in the referral program after any changes constitutes '
                   'acceptance of the new terms.',
             ),

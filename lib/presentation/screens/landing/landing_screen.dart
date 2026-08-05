@@ -68,10 +68,14 @@ class LandingScreen extends StatelessWidget {
             child: const Icon(Icons.auto_awesome, size: 18, color: Colors.black),
           ),
           const SizedBox(width: 10),
-          Text(
-            'Fun Pay',
-            style: rs.h3.copyWith(
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
+          Flexible(
+            child: Text(
+              'Fun Pay',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: rs.h3.copyWith(
+                color: isDark ? Colors.white : const Color(0xFF0F172A),
+              ),
             ),
           ),
           const Spacer(),
@@ -106,10 +110,13 @@ class LandingScreen extends StatelessWidget {
 
   Widget _buildHero(BuildContext context, bool isDark) {
     final rs = context.responsive;
+    // Small Android screens (e.g. 320dp) need tighter sizing so every
+    // element fits without overflow.
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: rs.w(20)),
-      padding: EdgeInsets.all(rs.w(24)),
+      margin: EdgeInsets.symmetric(horizontal: isNarrow ? rs.w(14) : rs.w(20)),
+      padding: EdgeInsets.all(isNarrow ? rs.w(16) : rs.w(24)),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(rs.r(24)),
         gradient: LinearGradient(
@@ -153,27 +160,34 @@ class LandingScreen extends StatelessWidget {
           ),
           SizedBox(height: rs.spaceLg),
           Text(
-            'Turn your daily\nroutine into rewards',
+            // Keep the deliberate line break on normal screens, but let the
+            // heading wrap naturally on narrow screens so it never overflows.
+            'Turn your daily${isNarrow ? ' ' : '\n'}routine into rewards',
             style: rs.h1.copyWith(
               color: Colors.white,
-              fontSize: rs.fs(30),
+              // Slightly smaller heading on small screens.
+              fontSize: rs.fs(30) * (isNarrow ? 0.9 : 1.0),
               height: 1.15,
               letterSpacing: -0.5,
             ),
+            softWrap: true,
           ),
           SizedBox(height: rs.spaceMd),
           Text(
             'Complete tasks, watch videos, check in daily, and refer friends '
-            'to earn rewards. Redeem them for premium features, bonus '
-            'spins, exclusive themes and boosters — all inside the app.',
-            style: rs.body.copyWith(
+            'to earn rewards you can withdraw. Cash out your balance to your '
+            'UPI or Paytm account directly from the app.',
+            style: (isNarrow ? rs.bodySmall : rs.body).copyWith(
               color: Colors.white.withValues(alpha: 0.75),
-              height: 1.5,
+              // Tighter paragraph on small screens: smaller size + line height.
+              height: isNarrow ? 1.4 : 1.5,
             ),
+            softWrap: true,
           ),
           SizedBox(height: rs.spaceXxl),
           Row(
             children: [
+              // Equal-width responsive CTA buttons with proper spacing.
               Expanded(
                 child: GradientButton(
                   label: 'Create Free Account',
@@ -181,23 +195,29 @@ class LandingScreen extends StatelessWidget {
                       Navigator.pushNamed(context, AppRouter.registration),
                   icon: Icons.person_add_alt_1_rounded,
                   height: rs.h(46),
+                  fontSize: isNarrow ? 13 : 16,
+                  iconSize: isNarrow ? 17 : 20,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: isNarrow ? 10 : 12),
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRouter.login),
-                  icon: const Icon(Icons.lock_open_rounded, size: 16),
-                  label: Text('Log In', style: rs.buttonSmall),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
-                    padding: EdgeInsets.symmetric(vertical: rs.h(13)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(rs.r(14)),
+                child: SizedBox(
+                  // Same height as the gradient button so the pair lines up.
+                  height: rs.h(46),
+                  child: OutlinedButton.icon(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, AppRouter.login),
+                    icon: const Icon(Icons.lock_open_rounded, size: 16),
+                    label: Text('Log In', style: rs.buttonSmall),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(rs.r(14)),
+                      ),
                     ),
                   ),
                 ),
@@ -255,6 +275,8 @@ class LandingScreen extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: rs.caption.copyWith(
               color: isDark ? AppTheme.textMuted : const Color(0xFF94A3B8),
             ),
@@ -313,10 +335,10 @@ class LandingScreen extends StatelessWidget {
         desc: 'Spin the wheel for bonus rewards and exciting prizes.',
       ),
       (
-        icon: Icons.redeem_rounded,
+        icon: Icons.payments_outlined,
         color: const Color(0xFF06B6D4),
-        title: 'Redeem Perks',
-        desc: 'Spend rewards on premium features, themes, spins and boosters.',
+        title: 'Cash Withdrawals',
+        desc: 'Withdraw your earnings to your UPI or Paytm account directly.',
       ),
     ];
 
@@ -407,8 +429,8 @@ class LandingScreen extends StatelessWidget {
       ),
       (
         num: '3',
-        title: 'Redeem for perks',
-        desc: 'Unlock premium features, themes, spins and boosters.',
+        title: 'Withdraw anytime',
+        desc: 'Transfer your balance to UPI or Paytm whenever you like.',
         icon: Icons.auto_awesome_rounded,
       ),
     ];
@@ -513,10 +535,10 @@ class LandingScreen extends StatelessWidget {
             'wallet automatically.',
       ),
       (
-        q: 'What can I redeem my rewards for?',
-        a: 'Rewards can be spent on in-platform perks such as Premium access, '
-            'bonus spins, exclusive themes and booster packs. Rewards have no '
-            'cash value and cannot be exchanged for money.',
+        q: 'How do I withdraw my earnings?',
+        a: 'Go to the Withdraw section, choose your method (UPI or Paytm), and '
+            'enter the amount. Withdrawals are reviewed and processed within '
+            '24-48 hours.',
       ),
       (
         q: 'Is my data safe?',
@@ -601,10 +623,11 @@ class LandingScreen extends StatelessWidget {
 
   Widget _buildCta(BuildContext context, bool isDark) {
     final rs = context.responsive;
+    final isNarrow = MediaQuery.sizeOf(context).width < 360;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: rs.w(20), vertical: rs.h(28)),
-      padding: EdgeInsets.all(rs.w(24)),
+      padding: EdgeInsets.all(isNarrow ? rs.w(20) : rs.w(24)),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(rs.r(24)),
         gradient: const LinearGradient(
@@ -706,7 +729,7 @@ class LandingScreen extends StatelessWidget {
           ),
           SizedBox(height: rs.spaceLg),
           Text(
-            'Fun Pay · Rewards are in-platform only and have no cash value.',
+            'Fun Pay · Withdraw your earnings to UPI or Paytm anytime.',
             textAlign: TextAlign.center,
             style: rs.caption.copyWith(
               color: isDark ? AppTheme.textMuted : const Color(0xFF94A3B8),

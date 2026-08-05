@@ -122,9 +122,9 @@ async function creditCpxReward({
   const transactionRef = db.collection('transactions').doc();
   const notificationRef = db.collection('notifications').doc();
 
-  const description = `CPX Research survey reward: ${amount.toFixed(2)} pts`;
+  const description = `CPX Research survey reward: ₹${amount.toFixed(2)}`;
   const notifTitle = '🎉 Survey Reward Earned!';
-  const notifMessage = `You earned ${amount.toFixed(2)} pts from a CPX Research survey. They're in your wallet now!`;
+  const notifMessage = `You earned ₹${amount.toFixed(2)} from a CPX Research survey. They're in your wallet now!`;
 
   let credited = false;
 
@@ -394,7 +394,7 @@ async function handleCpxPostback({
       logger.log(`CPX: tx ${transactionId} already credited (concurrent duplicate), skipping.`);
     } else {
       logger.log(
-        `CPX: credited ${amount.toFixed(2)} pts to user ${userId} ` +
+        `CPX: credited ₹${amount.toFixed(2)} to user ${userId} ` +
           `(tx ${transactionId}, hashVerified=${hashVerified})`
       );
     }

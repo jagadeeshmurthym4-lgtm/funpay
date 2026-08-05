@@ -197,7 +197,7 @@ class TransactionDetailScreen extends StatelessWidget {
       case TransactionSource.referral:
         return 'Referral Bonus';
       case TransactionSource.withdrawal:
-        return 'Redemption';
+        return 'Withdrawal';
       case TransactionSource.bonus:
         return 'Sign-up Bonus';
       case TransactionSource.adminAdjustment:

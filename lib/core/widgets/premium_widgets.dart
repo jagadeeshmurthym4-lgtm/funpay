@@ -361,6 +361,8 @@ class GradientButton extends StatelessWidget {
   final double height;
   final double borderRadius;
   final bool isLoading;
+  final double? fontSize;
+  final double? iconSize;
 
   const GradientButton({
     super.key,
@@ -374,6 +376,8 @@ class GradientButton extends StatelessWidget {
     this.height = 52,
     this.borderRadius = 16,
     this.isLoading = false,
+    this.fontSize,
+    this.iconSize,
   });
 
   @override
@@ -415,22 +419,29 @@ class GradientButton extends StatelessWidget {
                         color: Colors.black,
                       ),
                     )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (icon != null) ...[
-                          Icon(icon, size: 20, color: txtColor),
-                          const SizedBox(width: 8),
-                        ],
-                        Text(
-                          label,
-                          style: TextStyle(
-                            color: txtColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                  : FittedBox(
+                      // Scales the label+icon down (never up) so the button
+                      // content can't overflow its container on small screens.
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (icon != null) ...[
+                            Icon(icon, size: iconSize ?? 20, color: txtColor),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            label,
+                            maxLines: 1,
+                            softWrap: false,
+                            style: TextStyle(
+                              color: txtColor,
+                              fontSize: fontSize ?? 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
             ),
           ),
