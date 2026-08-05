@@ -2,7 +2,7 @@ name: cashspark
 description: "Fun Pay - Earn rewards through ads, referrals, and more!"
 publish_to: 'none'
 
-version: 1.2.0+22
+version: 1.2.1+23
 
 environment:
   sdk: '>=3.6.0 <4.0.0'
