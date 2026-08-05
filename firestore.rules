@@ -18,7 +18,14 @@ service cloud.firestore {
         (isAdmin() && !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['qrCodeUploadedAt', 'qrCodeUpdatedAt', 'qrCodeUploadedBy']))
       );
-      allow delete: if isAdmin();
+      // A user can delete their OWN doc (in-app "Delete Account") and their own
+      // legacy docs (docs carrying the same email from a previous UID) so that
+      // re-sign-in migration can clean up old-UID docs instead of leaving
+      // duplicate accounts that inflate admin user counts.
+      allow delete: if isAdmin() || isOwner(userId) ||
+        (isAuthenticated() &&
+         request.auth.token.email is string &&
+         resource.data.email.lower() == request.auth.token.email.lower());
     }
 
     // Wallets - read own, write admin only (prevent manual balance edits)

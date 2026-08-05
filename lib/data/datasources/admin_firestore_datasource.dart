@@ -3,6 +3,7 @@ import 'package:cashspark/core/constants/app_constants.dart';
 import 'package:cashspark/data/models/admin_model.dart';
 import 'package:cashspark/data/models/banner_model.dart';
 import 'package:cashspark/data/models/user_model.dart';
+import 'package:cashspark/domain/entities/user_entity.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 
 class AdminFirestoreDataSource {
@@ -107,7 +108,7 @@ class AdminFirestoreDataSource {
       final snapshot = await _firestore
           .collection(AppConstants.usersCollection)
           .get();
-      return snapshot.docs.length;
+      return countUniqueUsersByEmail(snapshot.docs.map((d) => d.data()));
     } catch (e) {
       debugPrint('getTotalUsers error: $e');
       return 0;
@@ -120,14 +121,14 @@ class AdminFirestoreDataSource {
       final snapshot = await _firestore
           .collection(AppConstants.usersCollection)
           .get();
-      int count = 0;
-      for (final doc in snapshot.docs) {
-        final createdAt = (doc.data()['createdAt'] as dynamic)?.toDate() as DateTime?;
-        if (createdAt != null && createdAt.isAfter(since)) {
-          count++;
-        }
-      }
-      return count;
+      // "Active" = the user actually signed in within the window (lastLoginAt).
+      final recentDocs = snapshot.docs
+          .where((doc) {
+            final lastLogin = (doc.data()['lastLoginAt'] as dynamic)?.toDate() as DateTime?;
+            return lastLogin != null && lastLogin.isAfter(since);
+          })
+          .map((doc) => doc.data());
+      return countUniqueUsersByEmail(recentDocs);
     } catch (e) {
       debugPrint('getActiveUsers error: $e');
       return 0;
@@ -211,14 +212,13 @@ class AdminFirestoreDataSource {
       for (int i = days - 1; i >= 0; i--) {
         final day = DateTime(today.year, today.month, today.day).subtract(Duration(days: i));
         final nextDay = day.add(const Duration(days: 1));
-        int count = 0;
-        for (final doc in snapshot.docs) {
-          final createdAt = (doc.data()['createdAt'] as dynamic)?.toDate() as DateTime?;
-          if (createdAt != null && createdAt.isAfter(day) && createdAt.isBefore(nextDay)) {
-            count++;
-          }
-        }
-        results.add(count);
+        final dayDocs = snapshot.docs
+            .where((doc) {
+              final createdAt = (doc.data()['createdAt'] as dynamic)?.toDate() as DateTime?;
+              return createdAt != null && createdAt.isAfter(day) && createdAt.isBefore(nextDay);
+            })
+            .map((doc) => doc.data());
+        results.add(countUniqueUsersByEmail(dayDocs));
       }
       return results;
     } catch (e) {
@@ -237,8 +237,7 @@ class AdminFirestoreDataSource {
       final users = snapshot.docs
           .map((doc) => UserModel.fromFirestore(doc.data()))
           .toList();
-      users.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      return users.take(limit).toList();
+      return dedupeUsersByEmail(users).take(limit).toList();
     } catch (e) {
       debugPrint('getAllUsers error: $e');
       return [];
@@ -262,9 +261,9 @@ class AdminFirestoreDataSource {
             uid.contains(lowerQuery);
       }).toList();
 
-      return filtered
-          .map((doc) => UserModel.fromFirestore(doc.data()))
-          .toList();
+      return dedupeUsersByEmail(
+        filtered.map((doc) => UserModel.fromFirestore(doc.data())),
+      );
     } catch (e) {
       debugPrint('searchUsers error: $e');
       return [];
@@ -438,3 +437,49 @@ class AdminFirestoreDataSource {
         .set(settings.toFirestore());
   }
 }
+
+/// Counts distinct users by email so a person who deleted their account and
+/// re-signed up with the same account (new UID, same email) is counted once
+/// instead of twice in the admin dashboard. Documents without a usable email
+/// are each counted individually.
+int countUniqueUsersByEmail(Iterable<Map<String, dynamic>> userDocs) {
+  final seenEmails = <String>{};
+  int count = 0;
+  for (final data in userDocs) {
+    final email = (data['email'] as String?)?.trim().toLowerCase() ?? '';
+    if (email.isNotEmpty) {
+      if (seenEmails.add(email)) count++;
+    } else {
+      count++;
+    }
+  }
+  return count;
+}
+
+/// Deduplicates user models by email, keeping the most recently active doc per
+/// email (a person may exist under multiple UIDs after deleting & re-signing-up
+/// with the same account). Docs without an email are kept as-is.
+List<UserModel> dedupeUsersByEmail(Iterable<UserModel> users) {
+  final byEmail = <String, UserModel>{};
+  final noEmail = <UserModel>[];
+  for (final user in users) {
+    final key = user.email.trim().toLowerCase();
+    if (key.isEmpty) {
+      noEmail.add(user);
+      continue;
+    }
+    final existing = byEmail[key];
+    if (existing == null || _isMoreActive(user, existing)) {
+      byEmail[key] = user;
+    }
+  }
+  final result = [...byEmail.values, ...noEmail];
+  result.sort((a, b) => _activityTime(b).compareTo(_activityTime(a)));
+  return result;
+}
+
+/// Most recent activity timestamp for a user (lastLoginAt, else createdAt).
+DateTime _activityTime(UserEntity user) => user.lastLoginAt ?? user.createdAt;
+
+bool _isMoreActive(UserModel a, UserModel b) =>
+    _activityTime(a).isAfter(_activityTime(b));
